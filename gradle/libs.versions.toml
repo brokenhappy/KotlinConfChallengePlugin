@@ -1,5 +1,6 @@
 [versions]
 # libraries
+composeDesktop = "1.8.0"
 junit = "4.13.2"
 opentest4j = "1.3.0"
 
@@ -17,6 +18,8 @@ opentest4j = { group = "org.opentest4j", name = "opentest4j", version.ref = "ope
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
 intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intelliJPlatform" }
+composeDesktop = { id = "org.jetbrains.compose", version.ref = "composeDesktop" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
