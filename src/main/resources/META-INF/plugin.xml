@@ -12,6 +12,12 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
+        <projectConfigurable
+                parentId="tools"
+                instance="com.github.brokenhappy.kotlinconfchallengeplugin.SettingsConfigurable"
+                id="com.example.ProjectSettingsConfigurable"
+                displayName="KotlinConf Challenge"
+                nonDefaultProject="true"/>
         <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.MyProjectActivity" />
     </extensions>

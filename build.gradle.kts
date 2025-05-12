@@ -13,6 +13,7 @@ repositories {
 plugins {
     alias(libs.plugins.kotlin) // Kotlin support
     alias(libs.plugins.intelliJPlatform) // IntelliJ Platform Gradle Plugin
+    kotlin("plugin.serialization") version libs.versions.kotlin
     alias(libs.plugins.changelog) // Gradle Changelog Plugin
     alias(libs.plugins.qodana) // Gradle Qodana Plugin
     alias(libs.plugins.kover) // Gradle Kover Plugin
@@ -42,6 +43,7 @@ repositories {
 dependencies {
 //    // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
     implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-242:0.27.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
     // Do not bring in Material (we use Jewel) and Coroutines (the IDE has its own)
     api(compose.desktop.currentOs) {
