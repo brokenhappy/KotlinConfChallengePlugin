@@ -1,10 +1,13 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-<idea-plugin>
+<idea-plugin package="com.github.brokenhappy.kotlinconfchallengeplugin">
     <id>com.github.brokenhappy.kotlinconfchallengeplugin</id>
     <name>KotlinConfChallengePlugin</name>
     <vendor>brokenhappy</vendor>
 
-    <depends>com.intellij.modules.platform</depends>
+
+    <dependencies>
+        <plugin id="com.intellij.modules.platform"/>
+    </dependencies>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
