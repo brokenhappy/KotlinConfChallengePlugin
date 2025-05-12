@@ -41,7 +41,8 @@ repositories {
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
 //    // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
-    implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
+    implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-242:0.27.0")
+
     // Do not bring in Material (we use Jewel) and Coroutines (the IDE has its own)
     api(compose.desktop.currentOs) {
         exclude(group = "org.jetbrains.compose.material")
