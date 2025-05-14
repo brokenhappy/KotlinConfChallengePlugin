@@ -19,6 +19,6 @@
                 displayName="KotlinConf Challenge"
                 nonDefaultProject="true"/>
         <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.MyProjectActivity" />
+        <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.KotlinFileOnChangeSaver" />
     </extensions>
 </idea-plugin>
