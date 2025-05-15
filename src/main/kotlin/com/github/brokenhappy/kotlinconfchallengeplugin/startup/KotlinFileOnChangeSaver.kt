@@ -13,6 +13,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.PsiErrorElementUtil
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.*
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class KotlinFileOnChangeSaver : ProjectActivity {
@@ -31,9 +33,17 @@ class KotlinFileOnChangeSaver : ProjectActivity {
         flowThatEmitsOnAllChangesInAllOpenEditors(project)
             .conflate()
             .collect { document ->
-                withContext(Dispatchers.EDT) {
-                    FileDocumentManager.getInstance().saveDocument(document)
+                delay(20.milliseconds) // Give some time to update files. Otherwise, we still observe the pre-change state.
+                val virtualFile = FileDocumentManager.getInstance().getFile(document)
+                if (
+                    virtualFile?.extension == "kt" &&
+                    !readAction { PsiErrorElementUtil.hasErrors(project, virtualFile) }
+                ) {
+                    withContext(Dispatchers.EDT) {
+                        FileDocumentManager.getInstance().saveDocument(document)
+                    }
                 }
+
                 delay(0.2.seconds)
             }
     }
