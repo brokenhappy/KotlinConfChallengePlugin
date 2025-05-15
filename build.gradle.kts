@@ -42,14 +42,8 @@ repositories {
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
 //    // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
-    implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-242:0.27.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
-    // Do not bring in Material (we use Jewel) and Coroutines (the IDE has its own)
-    api(compose.desktop.currentOs) {
-        exclude(group = "org.jetbrains.compose.material")
-        exclude(group = "org.jetbrains.kotlinx")
-    }
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
 
@@ -57,11 +51,17 @@ dependencies {
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
 
-        // Plugin Dependencies. Uses `platformBundledPlugins` property from the gradle.properties file for bundled IntelliJ Platform plugins.
-        bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
+        pluginVerifier()
+        zipSigner()
 
-        // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file for plugin from JetBrains Marketplace.
-        plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
+        // Bundled modules
+        bundledModules(listOf(
+            "intellij.platform.jewel.foundation",
+            "intellij.platform.jewel.ui",
+            "intellij.platform.jewel.ideLafBridge",
+            "intellij.libraries.compose.foundation.desktop",
+            "intellij.libraries.skiko",
+        ))
 
         testFramework(TestFrameworkType.Platform)
     }
@@ -69,6 +69,8 @@ dependencies {
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
 intellijPlatform {
+    buildSearchableOptions = false
+
     pluginConfiguration {
         name = providers.gradleProperty("pluginName")
         version = providers.gradleProperty("pluginVersion")

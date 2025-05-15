@@ -7,6 +7,11 @@
 
     <dependencies>
         <plugin id="com.intellij.modules.platform"/>
+        <module name="intellij.platform.jewel.foundation"/>
+        <module name="intellij.platform.jewel.ui"/>
+        <module name="intellij.platform.jewel.ideLafBridge"/>
+        <module name="intellij.platform.jewel.markdown.ideLafBridgeStyling"/>
+        <module name="intellij.platform.jewel.markdown.core"/>
     </dependencies>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
