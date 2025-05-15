@@ -45,9 +45,7 @@ class MyToolWindowFactory : ToolWindowFactory {
             val googleSheetId = appState.settings.googleSheetId
             val challenge = challengeMutable
             LaunchedEffect(googleSheetId) {
-                val downloadCurrentChallenge = downloadCurrentChallenge(googleSheetId)
-                println("AAAAAAHH $downloadCurrentChallenge")
-                challengeMutable = downloadCurrentChallenge
+                challengeMutable = downloadCurrentChallenge(googleSheetId)
             }
 
             if (challenge == null) {
@@ -56,7 +54,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                 var hasStartedChallenge by remember { mutableStateOf(false) }
                 if (!hasStartedChallenge) {
                     val startTime = challenge.endTime - 10.minutes
-                    val timeLeft by remember(startTime) { countdownTo(startTime, interval = 10.milliseconds) }.collectAsState(Duration.ZERO)
+                    val timeLeft by countdownTo(startTime, interval = 10.milliseconds).collectAsState(Duration.ZERO)
                     Column {
                         Text("Next challenge starts in: $timeLeft")
 
