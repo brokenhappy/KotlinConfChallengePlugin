@@ -15,9 +15,7 @@ import kotlinx.serialization.Serializable
 internal class ChallengeStateService(private val project: Project) : SerializablePersistentStateComponent<ChallengeState>(
     ChallengeState(
         settings = ChallengeSettings(
-            currentChallengeNumber = 0,
-            pathToImages = "",
-            pathToFakeDatabaseFile = "",
+            googleSheetId = "",
         ),
     ),
 ) {
@@ -37,5 +35,6 @@ internal class ChallengeStateService(private val project: Project) : Serializabl
 
 @Serializable
 internal data class ChallengeState(
-    val settings: ChallengeSettings,
+    // DON'T MUTATE THIS, JUST A NECESSITY OF THE PERSISTENCE INFRA
+    @JvmField var settings: ChallengeSettings,
 )

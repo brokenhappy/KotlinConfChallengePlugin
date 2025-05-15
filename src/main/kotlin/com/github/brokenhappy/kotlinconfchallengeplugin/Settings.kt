@@ -23,10 +23,7 @@ import javax.swing.JComponent
 
 @Serializable
 internal data class ChallengeSettings(
-    val currentChallengeNumber: Int,
-    val pathToImages: String,
-    /** Is used to communicate from the IDE plugin to the challenge runtime */
-    val pathToFakeDatabaseFile: String,
+    val googleSheetId: String,
 )
 
 private class SettingsConfigurable(private val project: Project): Configurable {
@@ -56,17 +53,8 @@ private class SettingsConfigurable(private val project: Project): Configurable {
 private fun ChallengeSettingsView(settings: ChallengeSettings, onChange: (ChallengeSettings) -> Unit) {
     Column {
         Row {
-            Text("Current challenge number:")
-            val textState = remember { TextFieldState(initialText = settings.currentChallengeNumber.toString()) }
-            LaunchedEffect(textState.text) {
-                val number = textState.text.toString().toIntOrNull() ?: return@LaunchedEffect
-                onChange(settings.copy(currentChallengeNumber = number))
-            }
-            TextField(textState)
-        }
-        Row {
-            Text("Path to images")
-            TextField(settings.pathToImages, onChange = { onChange(settings.copy(pathToImages = it)) })
+            Text("Google sheet ID:")
+            TextField(settings.googleSheetId, onChange = { onChange(settings.copy(googleSheetId = it)) })
         }
     }
 }
