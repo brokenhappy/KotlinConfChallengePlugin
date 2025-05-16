@@ -45,7 +45,7 @@ internal class ChallengeDownloadCachingService(
 
     suspend fun getDatabase(): List<Challenge>? = state
         .asRealState()
-        .takeIf { it.lastPoll + 1.minutes <= Clock.System.now() }
+        .takeIf { it.lastPoll + 1.minutes > Clock.System.now() }
         ?.dbCache
         ?: downloadChallenges(project.service<ChallengeStateService>().appState().value.settings.googleSheetId)
             .also { dbState ->
