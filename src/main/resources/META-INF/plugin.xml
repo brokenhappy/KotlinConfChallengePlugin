@@ -26,4 +26,13 @@
         <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.KotlinFileOnChangeSaver" />
     </extensions>
+
+    <actions>
+        <action id="KotlinConfChallengePlugin.ToggleForceChallengeStart"
+                class="com.github.brokenhappy.kotlinconfchallengeplugin.actions.ToggleForceChallengeStartAction"
+                text="Toggle Force Challenge Start"
+                description="Toggle force challenge start mode">
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta alt T"/>
+        </action>
+    </actions>
 </idea-plugin>

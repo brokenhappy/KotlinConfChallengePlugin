@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.Challenge
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
+import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -53,14 +54,30 @@ class MyToolWindowFactory : ToolWindowFactory {
             if (challenge == null) {
                 Text("The last challenge has already passed.")
             } else {
-                var hasStartedChallenge by remember { mutableStateOf(false) }
-                if (!hasStartedChallenge) {
+                val appState by project.service<ChallengeStateService>().appState().collectAsState()
+                fun startChallenge() {
+                    project.service<ChallengeStateService>().update {
+                        it.copy(currentlyRunningChallengeEndTime = challenge.endTime)
+                    }
+                }
+                LaunchedEffect(appState.forceChallengeStart) {
+                    if (appState.forceChallengeStart) {
+                        startChallenge()
+                    }
+                }
+
+                if (appState.currentlyRunningChallengeEndTime != challenge.endTime) {
                     val startTime = challenge.endTime - 10.minutes
                     val timeLeft by countdownTo(startTime, interval = 10.milliseconds).collectAsState(1.hours)
                     Column {
                         Text("Next challenge starts in: $timeLeft")
 
-                        DefaultButton(enabled = timeLeft == Duration.ZERO, onClick = { hasStartedChallenge = true }) {
+                        DefaultButton(
+                            enabled = timeLeft == Duration.ZERO,
+                            onClick = {
+                                startChallenge()
+                            },
+                        ) {
                             Text("Start challenge!")
                         }
                     }
