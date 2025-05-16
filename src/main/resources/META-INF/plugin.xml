@@ -25,6 +25,7 @@
                 nonDefaultProject="true"/>
         <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.KotlinFileOnChangeSaver" />
+        <notificationGroup id="KotlinConfChallengePlugin.Notifications" displayType="BALLOON" />
     </extensions>
 
     <actions>
@@ -33,6 +34,12 @@
                 text="Toggle Force Challenge Start"
                 description="Toggle force challenge start mode">
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta alt T"/>
+        </action>
+        <action id="KotlinConfChallengePlugin.RefetchChallenges"
+                class="com.github.brokenhappy.kotlinconfchallengeplugin.actions.RefetchChallengesAction"
+                text="Refetch Challenges"
+                description="Refetch challenges from the server">
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta alt R"/>
         </action>
     </actions>
 </idea-plugin>

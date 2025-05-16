@@ -42,26 +42,35 @@ internal class ChallengeDownloadCachingService(
         ),
     ),
 ) {
-
+    // TODO: Make UI respond to life state (also after refresh n stuff)
     suspend fun getDatabase(): List<Challenge>? = state
         .asRealState()
         .takeIf { it.lastPoll + 1.minutes > Clock.System.now() }
         ?.dbCache
-        ?: downloadChallenges(project.service<ChallengeStateService>().appState().value.settings.googleSheetId)
-            .also { dbState ->
-                if (dbState != null) {
-                    coroutineScope.launch {
-                        updateState {
-                            it.asRealState().copy(
-                                dbCache = dbState,
-                                lastPoll = Clock.System.now(),
-                            ).jsonWrapped()
-                        }
-                        hydrateImages(dbState.map { it.imageUrl })
+        ?: downloadAndCacheChallenges(hydrateImageCacheScope = coroutineScope /* hydrate asynchronously */)
+        ?: state.asRealState().dbCache
+
+    /** @return true if it succeeded */
+    suspend fun hydrateFreshCaches(): Boolean = coroutineScope { downloadAndCacheChallenges(this) } != null
+
+
+    private suspend fun downloadAndCacheChallenges(hydrateImageCacheScope: CoroutineScope): List<Challenge>? =
+        downloadChallenges().also { dbState ->
+            if (dbState != null) {
+                hydrateImageCacheScope.launch {
+                    updateState {
+                        it.asRealState().copy(
+                            dbCache = dbState,
+                            lastPoll = Clock.System.now(),
+                        ).jsonWrapped()
                     }
+                    hydrateImages(dbState.map { it.imageUrl })
                 }
             }
-        ?: state.asRealState().dbCache
+        }
+
+    private suspend fun downloadChallenges(): List<Challenge>? =
+        downloadChallenges(project.service<ChallengeStateService>().appState().value.settings.googleSheetId)
 
     suspend fun getImage(imageUrl: String): ByteArray? = state
         .asRealState()
