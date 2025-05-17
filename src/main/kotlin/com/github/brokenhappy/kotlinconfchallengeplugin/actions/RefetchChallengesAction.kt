@@ -22,25 +22,28 @@ class RefetchChallengesAction : AnAction() {
             override fun run(indicator: ProgressIndicator) {
                 indicator.isIndeterminate = true
                 val success = runBlocking {
-                    project.service<ChallengeDownloadCachingService>().hydrateFreshCaches()
+                    project.service<ChallengeDownloadCachingService>().hydrateFreshCaches(onError = { message ->
+                        showErrorNotification(project, message)
+                    })
                 }
 
                 if (!success) {
-                    showErrorNotification(project)
+                    showErrorNotification(project, "Failed to download challenges. Please check your internet connection and try again.")
                 }
             }
         })
     }
 
-    private fun showErrorNotification(project: Project) {
-        com.intellij.notification.Notifications.Bus.notify(
-            com.intellij.notification.Notification(
-                "KotlinConfChallengePlugin.Notifications",
-                "Challenge Download Failed",
-                "Failed to download challenges. Please check your internet connection and try again.",
-                NotificationType.ERROR
-            ),
-            project
-        )
-    }
+}
+
+internal fun showErrorNotification(project: Project, string: String) {
+    com.intellij.notification.Notifications.Bus.notify(
+        com.intellij.notification.Notification(
+            "KotlinConfChallengePlugin.Notifications",
+            "Challenge Download Failed",
+            string,
+            NotificationType.ERROR
+        ),
+        project
+    )
 }

@@ -1,5 +1,6 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin.services
 
+import com.github.brokenhappy.kotlinconfchallengeplugin.actions.showErrorNotification
 import com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.KotlinConfChallengeToolWindowFactory
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
@@ -12,6 +13,8 @@ import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
@@ -59,7 +62,9 @@ internal class ChallengeDownloadCachingService(
             ?.challenges == null
 
         coroutineScope {
-            if (needsRefresh) launch { while (!hydrateFreshCaches()); }
+            if (needsRefresh) launch {
+                while (!hydrateFreshCaches(onError = { showErrorNotification(project, it) })) delay(10.seconds)
+            }
             challenges.collect { emit(it) }
         }
     }.shareIn(projectScope, started = WhileSubscribed())
@@ -67,10 +72,10 @@ internal class ChallengeDownloadCachingService(
     fun challenges(): Flow<List<Challenge>?> = challengeSharedFlow
 
     /** @return true if it succeeded */
-    suspend fun hydrateFreshCaches(): Boolean = downloadAndCacheChallenges() != null
+    suspend fun hydrateFreshCaches(onError: (String) -> Unit): Boolean = downloadAndCacheChallenges(onError) != null
 
-    private suspend fun downloadAndCacheChallenges(): List<Challenge>? =
-        downloadChallenges().also { dbState ->
+    private suspend fun downloadAndCacheChallenges(onError: (String) -> Unit): List<Challenge>? =
+        downloadChallenges(onError).also { dbState ->
             if (dbState != null) {
                 updateRealState {
                     it.copy(
@@ -82,8 +87,8 @@ internal class ChallengeDownloadCachingService(
             }
         }
 
-    private suspend fun downloadChallenges(): List<Challenge>? =
-        downloadChallenges(project.service<ChallengeStateService>().appState().value.settings.googleSheetId)
+    private suspend fun downloadChallenges(onError: (String) -> Unit): List<Challenge>? =
+        downloadChallenges(project.service<ChallengeStateService>().appState().value.settings.googleSheetId, onError)
 
     suspend fun getImage(imageUrl: String): ByteArray? = state
         .asRealState()
@@ -136,7 +141,7 @@ internal fun DownloadCache.copy(
 @Serializable
 internal data class Challenge(val endTime: Instant, val duration: Duration, val imageUrl: String)
 
-private suspend fun downloadChallenges(sheetId: String): List<Challenge>? =
+private suspend fun downloadChallenges(sheetId: String, onError: (String) -> Unit): List<Challenge>? =
     withContext(Dispatchers.IO) {
         HttpClient { expectSuccess = false }.use { client ->
             client
@@ -147,18 +152,44 @@ private suspend fun downloadChallenges(sheetId: String): List<Challenge>? =
                 ?.lines()
                 ?.drop(1)
                 ?.map { it.split(',') }
-                ?.map { (startTime, duration, imageUrl) ->
-                    val startTimeHours = startTime.substringBefore(':').toInt()
-                    val startTimeMinutes = startTime.substringAfter(':').toInt()
-                    val (durationHours, durationMinutes, durationSeconds) = duration.split(':').map { it.toInt() }
+                ?.mapIndexed { index, (endTime, duration, imageUrl) ->
                     Challenge(
-                        Clock.System.now().withHoursAndMinutes(startTimeHours, startTimeMinutes),
-                        durationHours.hours + durationMinutes.minutes + durationSeconds.seconds,
-                        imageUrl,
+                        endTime = try {
+                            parseEndTime(endTime)
+                        } catch (_: Throwable) {
+                            coroutineContext.ensureActive()
+                            onError("Error for sheet at end time of row ${index + 2}: Expect hh:mm (seconds are not considered). Got $endTime")
+                            return@use null
+                        },
+                        duration = try {
+                            parseDuration(duration)
+                        } catch (_: Throwable) {
+                            coroutineContext.ensureActive()
+                            onError("Error for sheet at duration of row ${index + 2}: Expect hh:mm:ss. Got $endTime")
+                            return@use null
+                        },
+                        imageUrl = imageUrl,
                     )
                 }
         }
     }
+
+private fun parseDuration(duration: String): Duration =
+    duration
+        .split(':')
+        .map { it.toInt() }
+        .let { (h, m, s) ->
+            check(h in 0..24)
+            check(m in 0..60)
+            check(s in 0..60)
+            h.hours + m.minutes + s.seconds
+        }
+
+private fun parseEndTime(timeString: String): Instant =
+    Clock.System.now().withHoursAndMinutes(
+        hours = timeString.substringBefore(':').toInt().also { check(it <= 24) },
+        minutes = timeString.substringAfter(':').toInt().also { check(it <= 60) },
+    )
 
 private suspend fun downloadImage(imageUrl: String): ByteArray? =
     withContext(Dispatchers.IO) {
