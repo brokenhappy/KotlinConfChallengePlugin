@@ -1,6 +1,6 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin.services
 
-import com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.MyToolWindowFactory
+import com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.KotlinConfChallengeToolWindowFactory
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
 import fleet.util.logging.logger
@@ -14,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
@@ -140,7 +139,7 @@ private suspend fun downloadChallenges(sheetId: String): List<Challenge>? =
             client
                 .get("https://docs.google.com/spreadsheets/d/$sheetId/export?format=csv")
                 .takeIf { it.status.isSuccess() }
-                .also { if (it == null) logger<MyToolWindowFactory>().error("Failed to download CSV") }
+                .also { if (it == null) logger<KotlinConfChallengeToolWindowFactory>().error("Failed to download CSV") }
                 ?.bodyAsText()
                 ?.lines()
                 ?.map { it.split(',') }
