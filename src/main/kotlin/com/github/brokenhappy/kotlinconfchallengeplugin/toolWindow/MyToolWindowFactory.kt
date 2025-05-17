@@ -1,8 +1,15 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -10,9 +17,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.Challenge
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
@@ -40,7 +49,12 @@ class MyToolWindowFactory : ToolWindowFactory {
         toolWindow.addComposeTab {
             val challenges by project.service<ChallengeDownloadCachingService>().challenges().collectAsState(null)
             if (challenges == null) {
-                Text("Fetching challenges...")
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Fetching challenges...")
+                }
                 return@addComposeTab
             }
 
@@ -49,7 +63,12 @@ class MyToolWindowFactory : ToolWindowFactory {
                 ?.firstOrNull { it.endTime > Clock.System.now() }
 
             if (challenge == null) {
-                Text("The last challenge has already passed.")
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("The last challenge has already passed.")
+                }
             } else {
                 val appState by remember { project.service<ChallengeStateService>().appState() }.collectAsState()
                 fun startChallenge() {
@@ -66,16 +85,29 @@ class MyToolWindowFactory : ToolWindowFactory {
                 if (appState.currentlyRunningChallengeEndTime != challenge.endTime) {
                     val startTime = challenge.endTime - 10.minutes
                     val timeLeft by countdownTo(startTime, interval = 10.milliseconds).collectAsState(1.hours)
-                    Column {
-                        Text("Next challenge starts in: $timeLeft")
-
-                        DefaultButton(
-                            enabled = timeLeft == Duration.ZERO,
-                            onClick = {
-                                startChallenge()
-                            },
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Text("Start challenge!")
+                            Text("Next challenge starts in:")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("$timeLeft")
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            DefaultButton(
+                                enabled = timeLeft == Duration.ZERO,
+                                onClick = {
+                                    startChallenge()
+                                },
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Start challenge!")
+                            }
                         }
                     }
                 } else {
@@ -100,13 +132,24 @@ private fun ChallengeImage(url: String, project: Project) {
     }
 
     if (downloadErrorOccurred) {
-        Text("Aaaah, I'm so sorry, we failed to download the image!")
+        Box(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Aaaah, I'm so sorry, we failed to download the image!")
+        }
         return
     }
 
     if (image == null) {
-        Text("Loading image...")
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Loading image...")
+        }
     } else {
+        // Keep the image full-screen as required
         Image(
             bitmap = Image.makeFromEncoded(image).toComposeImageBitmap(),
             contentDescription = null,
