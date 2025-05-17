@@ -28,14 +28,17 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @Service(Service.Level.PROJECT)
-@State(name = "KotlinConfChallengeStateCache2")
+@State(name = "KotlinConfChallengeStateCache3")
 @Storage(StoragePathMacros.CACHE_FILE)
 internal class ChallengeDownloadCachingService(
     private val project: Project,
-    private val projectScope: CoroutineScope,
+    projectScope: CoroutineScope,
 ) : SerializablePersistentStateComponent<DownloadCacheJson>(
     DownloadCacheJson(
         Json.encodeToString(
@@ -131,7 +134,7 @@ internal fun DownloadCache.copy(
 
 
 @Serializable
-internal data class Challenge(val endTime: Instant, val imageUrl: String)
+internal data class Challenge(val endTime: Instant, val duration: Duration, val imageUrl: String)
 
 private suspend fun downloadChallenges(sheetId: String): List<Challenge>? =
     withContext(Dispatchers.IO) {
@@ -142,11 +145,17 @@ private suspend fun downloadChallenges(sheetId: String): List<Challenge>? =
                 .also { if (it == null) logger<KotlinConfChallengeToolWindowFactory>().error("Failed to download CSV") }
                 ?.bodyAsText()
                 ?.lines()
+                ?.drop(1)
                 ?.map { it.split(',') }
-                ?.map { (time, imageUrl) ->
-                    val hours = time.substringBefore(':').toInt()
-                    val minutes = time.substringAfter(':').toInt()
-                    Challenge(Clock.System.now().withHoursAndMinutes(hours, minutes), imageUrl)
+                ?.map { (startTime, duration, imageUrl) ->
+                    val startTimeHours = startTime.substringBefore(':').toInt()
+                    val startTimeMinutes = startTime.substringAfter(':').toInt()
+                    val (durationHours, durationMinutes, durationSeconds) = duration.split(':').map { it.toInt() }
+                    Challenge(
+                        Clock.System.now().withHoursAndMinutes(startTimeHours, startTimeMinutes),
+                        durationHours.hours + durationMinutes.minutes + durationSeconds.seconds,
+                        imageUrl,
+                    )
                 }
         }
     }

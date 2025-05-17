@@ -38,7 +38,6 @@ import org.jetbrains.skia.Image
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.times
 
 
@@ -81,7 +80,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
                 }
 
                 if (appState.currentlyRunningChallengeEndTime != challenge.endTime) {
-                    val startTime = challenge.endTime - 10.minutes
+                    val startTime = challenge.endTime - challenge.duration
                     val timeLeft by countdownTo(startTime, interval = 10.milliseconds).collectAsState(1.hours)
                     Box(
                         modifier = Modifier.fillMaxSize().padding(24.dp),
