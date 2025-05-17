@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
@@ -93,7 +94,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
                         ) {
                             Text("Next challenge starts in:")
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("$timeLeft")
+                            Text(text = "$timeLeft", fontFamily = FontFamily.Monospace)
                             Spacer(modifier = Modifier.height(24.dp))
 
                             DefaultButton(
