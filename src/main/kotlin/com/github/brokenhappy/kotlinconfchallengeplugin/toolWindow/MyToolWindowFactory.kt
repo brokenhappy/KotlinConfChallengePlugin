@@ -38,10 +38,7 @@ import kotlin.time.times
 class MyToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.addComposeTab {
-            var challenges: List<Challenge>? by remember { mutableStateOf(null) }
-            LaunchedEffect(Unit) {
-                challenges = project.service<ChallengeDownloadCachingService>().getDatabase()
-            }
+            val challenges by project.service<ChallengeDownloadCachingService>().challenges().collectAsState(null)
             if (challenges == null) {
                 Text("Fetching challenges...")
                 return@addComposeTab
@@ -54,7 +51,7 @@ class MyToolWindowFactory : ToolWindowFactory {
             if (challenge == null) {
                 Text("The last challenge has already passed.")
             } else {
-                val appState by project.service<ChallengeStateService>().appState().collectAsState()
+                val appState by remember { project.service<ChallengeStateService>().appState() }.collectAsState()
                 fun startChallenge() {
                     project.service<ChallengeStateService>().update {
                         it.copy(currentlyRunningChallengeEndTime = challenge.endTime)

@@ -12,6 +12,12 @@ import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -26,46 +32,51 @@ import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.minutes
 
 @Service(Service.Level.PROJECT)
-@State(name = "KotlinConfChallengeStateCache")
+@State(name = "KotlinConfChallengeStateCache2")
 @Storage(StoragePathMacros.CACHE_FILE)
 internal class ChallengeDownloadCachingService(
     private val project: Project,
-    private val coroutineScope: CoroutineScope,
+    private val projectScope: CoroutineScope,
 ) : SerializablePersistentStateComponent<DownloadCacheJson>(
     DownloadCacheJson(
         Json.encodeToString(
             DownloadCache(
                 imageCache = emptyMap(),
-                dbCache = null,
+                challenges = null,
                 lastPoll = Instant.DISTANT_PAST,
             ),
         ),
     ),
 ) {
-    // TODO: Make UI respond to life state (also after refresh n stuff)
-    suspend fun getDatabase(): List<Challenge>? = state
-        .asRealState()
-        .takeIf { it.lastPoll + 1.minutes > Clock.System.now() }
-        ?.dbCache
-        ?: downloadAndCacheChallenges(hydrateImageCacheScope = coroutineScope /* hydrate asynchronously */)
-        ?: state.asRealState().dbCache
+    private val challenges: MutableStateFlow<List<Challenge>?> = MutableStateFlow(null)
+    private val challengeSharedFlow = flow {
+        val needsRefresh = state
+            .asRealState()
+            .also { emit(it.challenges) }
+            .takeIf { it.lastPoll + 1.minutes > Clock.System.now() }
+            ?.challenges == null
+
+        coroutineScope {
+            if (needsRefresh) launch { while (!hydrateFreshCaches()); }
+            challenges.collect { emit(it) }
+        }
+    }.shareIn(projectScope, started = WhileSubscribed())
+
+    fun challenges(): Flow<List<Challenge>?> = challengeSharedFlow
 
     /** @return true if it succeeded */
-    suspend fun hydrateFreshCaches(): Boolean = coroutineScope { downloadAndCacheChallenges(this) } != null
+    suspend fun hydrateFreshCaches(): Boolean = downloadAndCacheChallenges() != null
 
-
-    private suspend fun downloadAndCacheChallenges(hydrateImageCacheScope: CoroutineScope): List<Challenge>? =
+    private suspend fun downloadAndCacheChallenges(): List<Challenge>? =
         downloadChallenges().also { dbState ->
             if (dbState != null) {
-                hydrateImageCacheScope.launch {
-                    updateState {
-                        it.asRealState().copy(
-                            dbCache = dbState,
-                            lastPoll = Clock.System.now(),
-                        ).jsonWrapped()
-                    }
-                    hydrateImages(dbState.map { it.imageUrl })
+                updateRealState {
+                    it.copy(
+                        challengesCache = dbState,
+                        lastPoll = Clock.System.now(),
+                    )
                 }
+                hydrateImages(dbState.map { it.imageUrl })
             }
         }
 
@@ -77,15 +88,16 @@ internal class ChallengeDownloadCachingService(
         .imageCache[imageUrl]
         ?: downloadImage(imageUrl).also { image ->
             if (image != null) {
-                updateState { oldStateJson ->
-                    oldStateJson
-                        .asRealState()
-                        .let { it.copy(imageCache = it.imageCache + (imageUrl to image)) }
-                        .jsonWrapped()
-                }
+                updateRealState { it.copy(imageCache = it.imageCache + (imageUrl to image)) }
             }
         }
         ?: this.state.asRealState().imageCache[imageUrl]
+
+    private fun updateRealState(action: (DownloadCache) -> DownloadCache) {
+        challenges.value = updateState { oldStateJson: DownloadCacheJson ->
+            action(oldStateJson.asRealState()).jsonWrapped()
+        }.asRealState().challenges
+    }
 
     private suspend fun hydrateImages(map: Iterable<String>) {
         coroutineScope {
@@ -108,15 +120,15 @@ internal fun DownloadCache.jsonWrapped(): DownloadCacheJson = DownloadCacheJson(
 @Serializable
 internal class DownloadCache(
     val imageCache: Map<String, ByteArray>,
-    val dbCache: List<Challenge>?,
+    val challenges: List<Challenge>?,
     val lastPoll: Instant,
 )
 
 internal fun DownloadCache.copy(
     imageCache: Map<String, ByteArray> = this.imageCache,
-    dbCache: List<Challenge>? = this.dbCache,
+    challengesCache: List<Challenge>? = this.challenges,
     lastPoll: Instant = this.lastPoll,
-) = DownloadCache(imageCache, dbCache, lastPoll)
+) = DownloadCache(imageCache, challengesCache, lastPoll)
 
 
 @Serializable
