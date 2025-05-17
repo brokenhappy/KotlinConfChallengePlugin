@@ -23,7 +23,7 @@
                 id="com.example.ProjectSettingsConfigurable"
                 displayName="KotlinConf Challenge"
                 nonDefaultProject="true"/>
-        <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.KotlinConfChallengeToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.KotlinConfChallengeToolWindowFactory" id="KotlinConf Challenge"/>
         <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.KotlinFileOnChangeSaver" />
         <notificationGroup id="KotlinConfChallengePlugin.Notifications" displayType="BALLOON" />
     </extensions>
