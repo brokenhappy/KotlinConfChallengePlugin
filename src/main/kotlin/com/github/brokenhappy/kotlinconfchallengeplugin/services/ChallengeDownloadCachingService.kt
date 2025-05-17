@@ -151,7 +151,13 @@ private suspend fun downloadChallenges(sheetId: String, onError: (String) -> Uni
                 ?.bodyAsText()
                 ?.lines()
                 ?.drop(1)
-                ?.map { it.split(',') }
+                ?.mapIndexed { index, line ->
+                    line.split(',').also {
+                        if (it.size < 3) {
+                            onError("Error for sheet at row ${index + 2}: Expecting end time, duration, and url. Got $it.")
+                        }
+                    }
+                }
                 ?.mapIndexed { index, (endTime, duration, imageUrl) ->
                     Challenge(
                         endTime = try {
