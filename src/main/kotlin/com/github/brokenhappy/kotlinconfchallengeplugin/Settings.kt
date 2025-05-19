@@ -24,6 +24,7 @@ import javax.swing.JComponent
 @Serializable
 internal data class ChallengeSettings(
     val googleSheetId: String,
+    val fileSharedBetweenRuntimeAndPlugin: String,
 )
 
 private class SettingsConfigurable(private val project: Project): Configurable {
@@ -55,6 +56,13 @@ private fun ChallengeSettingsView(settings: ChallengeSettings, onChange: (Challe
         Row {
             Text("Google sheet ID:")
             TextField(settings.googleSheetId, onChange = { onChange(settings.copy(googleSheetId = it)) })
+        }
+        Row {
+            Text("File location of file that is shared between runtime and plugin:")
+            TextField(
+                settings.fileSharedBetweenRuntimeAndPlugin,
+                onChange = { onChange(settings.copy(fileSharedBetweenRuntimeAndPlugin = it)) },
+            )
         }
     }
 }

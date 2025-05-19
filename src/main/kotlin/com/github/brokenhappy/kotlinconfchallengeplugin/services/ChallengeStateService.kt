@@ -17,6 +17,7 @@ internal class ChallengeStateService(private val project: Project) : Serializabl
     ChallengeState(
         settings = ChallengeSettings(
             googleSheetId = "",
+            fileSharedBetweenRuntimeAndPlugin = "${System.getProperty("user.home")}/Documents/filesForKotlinConfChallenge25/downloadCache.json",
         ),
         forceChallengeStart = false,
         currentlyRunningChallengeEndTime = Instant.DISTANT_PAST,

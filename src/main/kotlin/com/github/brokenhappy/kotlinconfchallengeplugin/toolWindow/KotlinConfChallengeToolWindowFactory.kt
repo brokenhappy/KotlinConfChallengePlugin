@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +31,9 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.datetime.*
 import org.jetbrains.jewel.bridge.addComposeTab
 import org.jetbrains.jewel.ui.component.DefaultButton
@@ -45,11 +48,15 @@ import kotlin.time.times
 class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.addComposeTab {
-            val challenges by project.service<ChallengeDownloadCachingService>().challenges().collectAsState(null)
+            val scope = rememberCoroutineScope()
+            val challenges by remember {
+                project.service<ChallengeDownloadCachingService>().challenges().shareIn(scope, started = Eagerly, replay = 1)
+            }.collectAsState(null)
+
             if (challenges == null) {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text("Fetching challenges...")
                 }
@@ -63,7 +70,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
             if (challenge == null) {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text("The last challenge has already passed.")
                 }
@@ -90,7 +97,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.Center,
                         ) {
                             Text("Next challenge starts in:")
                             Spacer(modifier = Modifier.height(8.dp))
@@ -102,7 +109,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
                                 onClick = {
                                     startChallenge()
                                 },
-                                modifier = Modifier.padding(8.dp)
+                                modifier = Modifier.padding(8.dp),
                             ) {
                                 Text("Start challenge!")
                             }
@@ -126,7 +133,7 @@ private fun ChallengeImage(url: String, project: Project) {
 
     LaunchedEffect(url, downloadErrorOccurred) {
         if (downloadErrorOccurred) return@LaunchedEffect
-        imageMutable = project.service<ChallengeDownloadCachingService>().getImage(url)
+        imageMutable = project.service<ChallengeDownloadCachingService>().getImage(url)?.toByteArray()
     }
 
     if (downloadErrorOccurred) {
