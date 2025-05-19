@@ -216,7 +216,7 @@ private fun Instant.withHoursAndMinutes(hours: Int, minutes: Int): Instant {
         dayOfMonth = localDateTime.dayOfMonth,
         hour = hours,
         minute = minutes,
-        second = localDateTime.second,
-        nanosecond = localDateTime.nanosecond
+        second = 0,
+        nanosecond = 0,
     ).toInstant(timeZone)
 }
