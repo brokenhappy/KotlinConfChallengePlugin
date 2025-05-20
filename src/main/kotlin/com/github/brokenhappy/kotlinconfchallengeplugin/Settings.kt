@@ -17,6 +17,7 @@ import com.intellij.openapi.util.NlsContexts
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 import org.jetbrains.jewel.bridge.JewelComposePanel
+import org.jetbrains.jewel.ui.component.Checkbox
 import org.jetbrains.jewel.ui.component.Text
 import javax.swing.JComponent
 
@@ -25,6 +26,7 @@ import javax.swing.JComponent
 internal data class ChallengeSettings(
     val googleSheetId: String,
     val fileSharedBetweenRuntimeAndPlugin: String,
+    val enableAutoStartJvmAndAndroidAfterChallengeCompletion: Boolean,
 )
 
 private class SettingsConfigurable(private val project: Project): Configurable {
@@ -62,6 +64,13 @@ private fun ChallengeSettingsView(settings: ChallengeSettings, onChange: (Challe
             TextField(
                 settings.fileSharedBetweenRuntimeAndPlugin,
                 onChange = { onChange(settings.copy(fileSharedBetweenRuntimeAndPlugin = it)) },
+            )
+        }
+        Row {
+            Text("Whether we automatically start the JVM and Android run configs after challenge completion:")
+            Checkbox(
+                checked = settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion,
+                onCheckedChange = { onChange(settings.copy(enableAutoStartJvmAndAndroidAfterChallengeCompletion = it)) },
             )
         }
     }

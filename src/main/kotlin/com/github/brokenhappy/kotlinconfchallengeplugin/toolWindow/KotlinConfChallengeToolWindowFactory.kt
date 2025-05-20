@@ -122,6 +122,15 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                     }
                 } else {
                     val timeLeft by countdownTo(challenge.endTime, interval = 10.milliseconds).collectAsState(1.hours)
+                    LaunchedEffect(timeLeft, appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
+                        if (!appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
+                            return@LaunchedEffect
+                        }
+
+                        if (timeLeft == Duration.ZERO) {
+                            project.runConfigurations(RunConfigType.JVM, RunConfigType.ANDROID)
+                        }
+                    }
                     val hasRunApp = appState.endTimeOfChallengeThatHasOpenedChallenge == challenge.endTime
                     val timeUntilAppRun = (timeLeft - challenge.duration / 2).coerceAtLeast(Duration.ZERO)
                     Column {
