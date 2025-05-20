@@ -4,17 +4,22 @@ import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateS
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
+import kotlinx.coroutines.runBlocking
 
 class ToggleForceChallengeStartAction : AnAction() {
-    override fun actionPerformed(e: AnActionEvent) {
+
+    override fun update(e: AnActionEvent) {
         val project = e.project ?: return
-        toggleForceChallengeStart(project)
+        val weNowAreForcingChallengeStart = project.service<ChallengeStateService>().appState().value.forceChallengeStart
+        e.presentation.text = when (weNowAreForcingChallengeStart) {
+            true -> "Stop Forcing Kotlin Challenge Start"
+            false -> "Start Forcing Kotlin Challenge Start"
+        }
     }
 
-    private fun toggleForceChallengeStart(project: Project) {
-        val challengeStateService = project.service<ChallengeStateService>()
-        challengeStateService.update { currentState ->
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        project.service<ChallengeStateService>().update { currentState ->
             currentState.copy(forceChallengeStart = !currentState.forceChallengeStart)
         }
     }
