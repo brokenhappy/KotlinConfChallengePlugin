@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -45,7 +46,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.times
 
 
-class KotlinConfChallengeToolWindowFactory : ToolWindowFactory {
+class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.addComposeTab {
             val scope = rememberCoroutineScope()
