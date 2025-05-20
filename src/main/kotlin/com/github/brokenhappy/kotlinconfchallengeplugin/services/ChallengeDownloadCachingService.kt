@@ -12,7 +12,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.datetime.*
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.KSerializer
@@ -32,7 +31,6 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -44,7 +42,7 @@ internal class ChallengeDownloadCachingService(
     private val state: MutableStateFlow<DownloadCache> = MutableStateFlow(
         DownloadCache(
             imageCache = emptyMap(),
-            challenges = null,
+            challengesCache = null,
             lastPoll = Instant.DISTANT_PAST,
         ),
     )
@@ -79,15 +77,15 @@ internal class ChallengeDownloadCachingService(
     fun challenges(): Flow<List<Challenge>?> = flow {
         val needsRefresh = state
             .value
-            .also { emit(it.challenges) }
+            .also { emit(it.challengesCache) }
             .takeIf { it.lastPoll + 1.minutes > Clock.System.now() }
-            ?.challenges == null
+            ?.challengesCache == null
 
         coroutineScope {
             if (needsRefresh) launch {
                 while (!hydrateFreshCaches(onError = { showErrorNotification(project, it) })) delay(10.seconds)
             }
-            state.collect { emit(it.challenges) }
+            state.collect { emit(it.challengesCache) }
         }
     }
 
@@ -221,17 +219,11 @@ private fun Instant.withHoursAndMinutes(hours: Int, minutes: Int): Instant {
 }
 
 @Serializable
-private class DownloadCache(
+private data class DownloadCache(
     val imageCache: Map<String, Blob>,
-    val challenges: List<Challenge>?,
+    val challengesCache: List<Challenge>?,
     val lastPoll: Instant,
 )
-
-private fun DownloadCache.copy(
-    imageCache: Map<String, Blob> = this.imageCache,
-    challengesCache: List<Challenge>? = this.challenges,
-    lastPoll: Instant = this.lastPoll,
-) = DownloadCache(imageCache, challengesCache, lastPoll)
 
 @Serializable(with = Blob.BlobSerializer::class)
 class Blob(private val data: ByteArray) {
