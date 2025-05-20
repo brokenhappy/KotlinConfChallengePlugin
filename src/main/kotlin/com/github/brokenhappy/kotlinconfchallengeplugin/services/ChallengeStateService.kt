@@ -12,7 +12,7 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 @Service(Service.Level.PROJECT)
-@State(name = "KotlinConfChallengeState2")
+@State(name = "KotlinConfChallengeState5")
 internal class ChallengeStateService(private val project: Project) : SerializablePersistentStateComponent<ChallengeState>(
     ChallengeState(
         settings = ChallengeSettings(
@@ -21,6 +21,7 @@ internal class ChallengeStateService(private val project: Project) : Serializabl
         ),
         forceChallengeStart = false,
         currentlyRunningChallengeEndTime = Instant.DISTANT_PAST,
+        endTimeOfChallengeThatHasOpenedChallenge = Instant.DISTANT_PAST,
     ),
 ) {
     private val appState = MutableStateFlow(state)
@@ -43,4 +44,5 @@ internal data class ChallengeState(
     @JvmField var settings: ChallengeSettings,
     @JvmField var forceChallengeStart: Boolean,
     @JvmField var currentlyRunningChallengeEndTime: Instant,
+    @JvmField var endTimeOfChallengeThatHasOpenedChallenge: Instant,
 )

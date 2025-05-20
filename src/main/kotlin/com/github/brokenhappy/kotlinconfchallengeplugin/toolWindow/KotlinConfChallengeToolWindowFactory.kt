@@ -4,11 +4,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,6 +25,8 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.github.brokenhappy.kotlinconfchallengeplugin.RunConfigType
+import com.github.brokenhappy.kotlinconfchallengeplugin.runConfigurations
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
 import com.intellij.openapi.components.service
@@ -117,7 +121,45 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                         }
                     }
                 } else {
-                    ChallengeImage(challenge.imageUrl, project)
+                    val timeLeft by countdownTo(challenge.endTime, interval = 10.milliseconds).collectAsState(1.hours)
+                    val hasRunApp = appState.endTimeOfChallengeThatHasOpenedChallenge == challenge.endTime
+                    val timeUntilAppRun = (timeLeft - challenge.duration / 2).coerceAtLeast(Duration.ZERO)
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                if (hasRunApp) {
+                                    Text(text = "Time left: ")
+                                    Text(text = "$timeLeft", fontFamily = FontFamily.Monospace)
+                                } else {
+                                    Text(text = "Time left until app run: ")
+                                    Text(text = "$timeUntilAppRun", fontFamily = FontFamily.Monospace)
+                                }
+                            }
+                            Spacer(Modifier.width(20.dp))
+                            DefaultButton(
+                                enabled = !hasRunApp && timeUntilAppRun == Duration.ZERO,
+                                onClick = {
+                                    project.service<ChallengeStateService>().update {
+                                        it.copy(endTimeOfChallengeThatHasOpenedChallenge = challenge.endTime)
+                                    }
+                                    project.runConfigurations(RunConfigType.JVM)
+                                },
+                            ) {
+                                if (hasRunApp) {
+                                    Text("App has been run")
+                                } else if (timeUntilAppRun == Duration.ZERO) {
+                                    Text("Run the App (Only once!)")
+                                } else {
+                                    Text("Run the App")
+                                }
+                            }
+                        }
+                        ChallengeImage(challenge.imageUrl, project)
+                    }
                 }
             }
         }
