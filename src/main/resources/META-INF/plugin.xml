@@ -33,7 +33,6 @@
                 class="com.github.brokenhappy.kotlinconfchallengeplugin.actions.ToggleForceChallengeStartAction"
                 text="Toggle Force Challenge Start"
                 description="Toggle force challenge start mode">
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta alt T"/>
         </action>
         <action id="KotlinConfChallengePlugin.RefetchChallenges"
                 class="com.github.brokenhappy.kotlinconfchallengeplugin.actions.RefetchChallengesAction"
