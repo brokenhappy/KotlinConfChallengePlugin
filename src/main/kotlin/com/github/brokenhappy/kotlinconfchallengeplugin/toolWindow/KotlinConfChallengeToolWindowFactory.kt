@@ -29,16 +29,23 @@ import com.github.brokenhappy.kotlinconfchallengeplugin.RunConfigType
 import com.github.brokenhappy.kotlinconfchallengeplugin.runConfigurations
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
+import com.github.brokenhappy.kotlinconfchallengeplugin.services.PatchAndUndoChangesService
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.reportProgress
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.*
 import org.jetbrains.jewel.bridge.addComposeTab
 import org.jetbrains.jewel.ui.component.DefaultButton
@@ -47,6 +54,7 @@ import org.jetbrains.skia.Image
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.times
 
 
@@ -70,7 +78,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
 
             val challenge = challenges
                 ?.sortedBy { it.endTime }
-                ?.firstOrNull { it.endTime > Clock.System.now() }
+                ?.firstOrNull { it.endTime + 3.minutes > Clock.System.now() }
 
             if (challenge == null) {
                 Box(
@@ -123,12 +131,28 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                 } else {
                     val timeLeft by countdownTo(challenge.endTime, interval = 10.milliseconds).collectAsState(1.hours)
                     LaunchedEffect(timeLeft, appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
-                        if (!appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
-                            return@LaunchedEffect
-                        }
+                        if (timeLeft != Duration.ZERO) return@LaunchedEffect
 
-                        if (timeLeft == Duration.ZERO) {
+                        if (appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
                             project.runConfigurations(RunConfigType.JVM, RunConfigType.ANDROID)
+                        }
+                        if (appState.settings.enableAutoPatchAndUndoChangesAfterChallengeCompletion) {
+                            withContext(Dispatchers.Default) {
+                                try {
+                                    withBackgroundProgress(project, "Counting down to rollback", cancellable = true) {
+                                        reportProgress(size = 200) { reporter ->
+                                            repeat(200) {
+                                                reporter.itemStep {
+                                                    delay(100.milliseconds)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    project.service<PatchAndUndoChangesService>().asyncSavePatchAndThenUndoChanges()
+                                } catch (_: CancellationException) {
+                                    coroutineContext.ensureActive() // Swallow cancellation from UI
+                                }
+                            }
                         }
                     }
                     val hasRunApp = appState.endTimeOfChallengeThatHasOpenedChallenge == challenge.endTime
@@ -141,16 +165,16 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                         ) {
                             Column {
                                 if (hasRunApp) {
-                                    Text(text = "Time left: ")
+                                    Text(text = "Time Left: ")
                                     Text(text = "$timeLeft", fontFamily = FontFamily.Monospace)
                                 } else {
-                                    Text(text = "Time left until app run: ")
+                                    Text(text = "Time To Midpoint:")
                                     Text(text = "$timeUntilAppRun", fontFamily = FontFamily.Monospace)
                                 }
                             }
                             Spacer(Modifier.width(20.dp))
                             DefaultButton(
-                                enabled = !hasRunApp && timeUntilAppRun == Duration.ZERO,
+                                enabled = !hasRunApp && timeUntilAppRun == Duration.ZERO && timeLeft != Duration.ZERO,
                                 onClick = {
                                     project.service<ChallengeStateService>().update {
                                         it.copy(endTimeOfChallengeThatHasOpenedChallenge = challenge.endTime)
@@ -162,6 +186,8 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                                     Text("App has been run")
                                 } else if (timeUntilAppRun == Duration.ZERO) {
                                     Text("Run the App (Only once!)")
+                                } else if (timeLeft == Duration.ZERO) {
+                                    Text("Run the App (Challenge is over)")
                                 } else {
                                     Text("Run the App")
                                 }

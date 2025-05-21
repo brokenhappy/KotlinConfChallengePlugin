@@ -12,13 +12,14 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 @Service(Service.Level.PROJECT)
-@State(name = "KotlinConfChallengeState5")
+@State(name = "KotlinConfChallengeState6")
 internal class ChallengeStateService(private val project: Project) : SerializablePersistentStateComponent<ChallengeState>(
     ChallengeState(
         settings = ChallengeSettings(
             googleSheetId = "",
             fileSharedBetweenRuntimeAndPlugin = "${System.getProperty("user.home")}/Documents/filesForKotlinConfChallenge25/downloadCache.json",
             enableAutoStartJvmAndAndroidAfterChallengeCompletion = false,
+            enableAutoPatchAndUndoChangesAfterChallengeCompletion = false,
         ),
         forceChallengeStart = false,
         currentlyRunningChallengeEndTime = Instant.DISTANT_PAST,

@@ -27,6 +27,7 @@ internal data class ChallengeSettings(
     val googleSheetId: String,
     val fileSharedBetweenRuntimeAndPlugin: String,
     val enableAutoStartJvmAndAndroidAfterChallengeCompletion: Boolean,
+    val enableAutoPatchAndUndoChangesAfterChallengeCompletion: Boolean,
 )
 
 private class SettingsConfigurable(private val project: Project): Configurable {
@@ -67,10 +68,17 @@ private fun ChallengeSettingsView(settings: ChallengeSettings, onChange: (Challe
             )
         }
         Row {
-            Text("Whether we automatically start the JVM and Android run configs after challenge completion:")
+            Text("Automatically start the JVM and Android run configs after challenge completion:")
             Checkbox(
                 checked = settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion,
                 onCheckedChange = { onChange(settings.copy(enableAutoStartJvmAndAndroidAfterChallengeCompletion = it)) },
+            )
+        }
+        Row {
+            Text("Automatically save and undo the changes that the user made after challenge completion:")
+            Checkbox(
+                checked = settings. enableAutoPatchAndUndoChangesAfterChallengeCompletion,
+                onCheckedChange = { onChange(settings.copy(enableAutoPatchAndUndoChangesAfterChallengeCompletion = it)) },
             )
         }
     }

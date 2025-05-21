@@ -41,5 +41,11 @@
                 description="Refetch challenges from the server">
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta alt R"/>
         </action>
+        <action id="KotlinConfChallengePlugin.CreatePatchAndUndo"
+                class="com.github.brokenhappy.kotlinconfchallengeplugin.actions.CreatePatchAndUndoAction"
+                text="Create Patch and Undo Changes"
+                description="Creates a patch of all local changes, saves it next to the challenges json file, and undoes the changes">
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta alt P"/>
+        </action>
     </actions>
 </idea-plugin>
