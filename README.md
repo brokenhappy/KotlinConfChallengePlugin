@@ -1,51 +1,22 @@
 # KotlinConfChallengePlugin
 
-![Build](https://github.com/brokenhappy/KotlinConfChallengePlugin/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
+This plugin adds a couple of features to IntelliJ to help with the KotlinConf challenge.
 
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Get familiar with the [template documentation][template].
-- [ ] Adjust the [pluginGroup](./gradle.properties) and [pluginName](./gradle.properties), as well as the [id](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
-
-<!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
-
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
-
-To keep everything working, do not remove `<!-- ... -->` sections. 
-<!-- Plugin description end -->
-
-## Installation
-
-- Using the IDE built-in plugin system:
-  
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "KotlinConfChallengePlugin"</kbd> >
-  <kbd>Install</kbd>
-  
-- Using JetBrains Marketplace:
-
-  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
-
-  You can also download the [latest release](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID/versions) from JetBrains Marketplace and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
-
-- Manually:
-
-  Download the [latest release](https://github.com/brokenhappy/KotlinConfChallengePlugin/releases/latest) and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
-
-
----
-Plugin based on the [IntelliJ Platform Plugin Template][template].
-
-[template]: https://github.com/JetBrains/intellij-platform-plugin-template
-[docs:plugin-description]: https://plugins.jetbrains.com/docs/intellij/plugin-user-experience.html#plugin-description-and-presentation
+The features are:
+ - **Auto-save.** This plugin makes IntelliJ save on each keystroke, so that Compose Hot Reload (CHR) can pick the changes up.
+   This is done this way, since the user won't see the CHR session.
+ - **Challenge tool window.** This tool window shows:
+   - The countdown until the challenge starts.
+   - The button to reveal the image once the challenge has started.
+   - Halfway through, it shows a button that allows the user to run the application a single time.
+     (It does this by text search for a run config with "main \[jvm]")
+ - **Refetch Challenges Action.** Press `Ctrl + opt + cmd + R` to update the local cache file from the configuration in the Google sheet. 
+ - **Create Patch and Undo Changes Action.** This stores the user's changes and then rolls them back.
+   The reason we create a patch is that people might come back later and ask for their changes.
+   The changes will get stored next to the local cache file named after their date and time.
+ - **Settings.** With the settings you can configure:
+   - The ID for the Google sheet. **REMEMBER TO SET THIS!**
+   - The location of the local cache file. This has the same default as the challenge runtime. Only change if you change it there too.
+   - Whether to automatically start the run configurations when the challenge starts.
+   - Whether to automatically start a cancellable 20-second countdown when the challenge is over to invoke the "Create Patch and Undo Changes" action.
+     (Can be canceled by cancelling the progress bar that you will see in the bottom right corner)
