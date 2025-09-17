@@ -189,8 +189,8 @@ private fun parseDuration(duration: String): Duration =
 
 private fun parseEndTime(timeString: String): Instant =
     Clock.System.now().withHoursAndMinutes(
-        hours = timeString.substringBefore(':').toInt().also { check(it <= 24) },
-        minutes = timeString.substringAfter(':').toInt().also { check(it <= 60) },
+        hours = timeString.substringBefore(':').toInt().also { check(it < 24) },
+        minutes = timeString.substringAfter(':').toInt().also { check(it < 60) },
     )
 
 private suspend fun downloadImage(imageUrl: String): Blob? =
