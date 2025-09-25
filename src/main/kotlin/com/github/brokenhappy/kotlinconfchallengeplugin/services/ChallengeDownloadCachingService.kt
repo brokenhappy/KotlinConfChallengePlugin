@@ -26,6 +26,8 @@ import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.createFile
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -55,7 +57,11 @@ internal class ChallengeDownloadCachingService(
                 .distinctUntilChanged()
                 .map { Path(it) }
                 .collectLatest { fileSharedBetweenRuntimeAndPlugin ->
-                    if (!fileSharedBetweenRuntimeAndPlugin.exists()) return@collectLatest
+                    if (fileSharedBetweenRuntimeAndPlugin.absolutePathString().isEmpty()) return@collectLatest
+                    fileSharedBetweenRuntimeAndPlugin.parent.toFile().mkdirs()
+                    if (!fileSharedBetweenRuntimeAndPlugin.exists()) {
+                        fileSharedBetweenRuntimeAndPlugin.createFile()
+                    }
                     try {
                         val newCache = Json.decodeFromString<DownloadCache>(
                             fileSharedBetweenRuntimeAndPlugin.readText(),
