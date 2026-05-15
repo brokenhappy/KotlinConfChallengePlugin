@@ -8,13 +8,10 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.util.io.awaitExit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.withContext
-import java.io.File
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,7 +40,7 @@ internal class PatchAndUndoChangesService(
                 .start()
 
             try {
-                if (runInterruptible { hasChangesProcess.waitFor() == 0 }) {
+                if (hasChangesProcess.awaitExit() == 0) {
                     LOG.info("No changes to create patch from")
                     return
                 }
@@ -70,7 +67,7 @@ internal class PatchAndUndoChangesService(
                 .start()
 
             try {
-                val createPatchResult = runInterruptible { createPatchProcess.waitFor() }
+                val createPatchResult = createPatchProcess.awaitExit()
                 if (createPatchResult != 0) {
                     val errorOutput = createPatchProcess.errorStream.bufferedReader().readText()
                     LOG.error("Error creating patch: $errorOutput")
@@ -90,7 +87,7 @@ internal class PatchAndUndoChangesService(
 
 
             try {
-                val undoChangesResult = runInterruptible { undoChangesProcess.waitFor() }
+                val undoChangesResult = undoChangesProcess.awaitExit()
                 if (undoChangesResult != 0) {
                     val errorOutput = undoChangesProcess.errorStream.bufferedReader().readText()
                     LOG.error("Error undoing changes: $errorOutput")
