@@ -2,14 +2,6 @@ import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
-repositories {
-    maven("https://packages.jetbrains.team/maven/p/kpm/public/")
-    google()
-    gradlePluginPortal()
-    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    mavenCentral()
-}
-
 plugins {
     alias(libs.plugins.kotlin) // Kotlin support
     alias(libs.plugins.intelliJPlatform) // IntelliJ Platform Gradle Plugin
@@ -17,7 +9,6 @@ plugins {
     alias(libs.plugins.changelog) // Gradle Changelog Plugin
     alias(libs.plugins.qodana) // Gradle Qodana Plugin
     alias(libs.plugins.kover) // Gradle Kover Plugin
-    alias(libs.plugins.composeDesktop)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -42,7 +33,7 @@ repositories {
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
 //    // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
-    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
@@ -54,14 +45,8 @@ dependencies {
         pluginVerifier()
         zipSigner()
 
-        // Bundled modules
-        bundledModules(listOf(
-            "intellij.platform.jewel.foundation",
-            "intellij.platform.jewel.ui",
-            "intellij.platform.jewel.ideLafBridge",
-            "intellij.libraries.compose.foundation.desktop",
-            "intellij.libraries.skiko",
-        ))
+        @Suppress("UnstableApiUsage")
+        composeUI()
 
         testFramework(TestFrameworkType.Platform)
     }

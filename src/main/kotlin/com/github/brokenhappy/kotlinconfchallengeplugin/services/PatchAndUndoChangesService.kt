@@ -14,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
-import okio.Path.Companion.toPath
 import java.io.File
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
@@ -60,9 +59,8 @@ internal class PatchAndUndoChangesService(
                 .value
                 .settings
                 .fileSharedBetweenRuntimeAndPlugin
-                .let { File(it) }
+                .let { Paths.get(it) }
                 .parent
-                .toPath()
                 .resolve("Challenges_Patch_$timestamp.patch")
                 .toFile()
 
