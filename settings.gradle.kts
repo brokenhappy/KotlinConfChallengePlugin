@@ -23,3 +23,5 @@ develocity {
 }
 
 rootProject.name = "KotlinConfChallengePlugin"
+
+include("shared", "main-control")

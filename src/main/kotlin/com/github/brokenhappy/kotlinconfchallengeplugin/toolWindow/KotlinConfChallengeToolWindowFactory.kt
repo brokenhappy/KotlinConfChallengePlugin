@@ -1,6 +1,7 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,12 +24,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.github.brokenhappy.kotlinconfchallengeplugin.actions.reportToIdeErrorDialog
+import com.github.brokenhappy.kotlinconfchallengeplugin.actions.showErrorNotification
 import com.github.brokenhappy.kotlinconfchallengeplugin.RunConfigType
 import com.github.brokenhappy.kotlinconfchallengeplugin.runConfigurations
+import com.github.brokenhappy.kotlinconfchallengeplugin.services.BleClientService
+import com.github.brokenhappy.kotlinconfchallengeplugin.services.BleConnectionState
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeStateService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.PatchAndUndoChangesService
@@ -43,6 +52,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.withContext
@@ -62,19 +72,27 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.addComposeTab {
             val scope = rememberCoroutineScope()
+            val bleState by remember { project.service<BleClientService>() }.connectionState.collectAsState()
             val challenges by remember {
-                project.service<ChallengeDownloadCachingService>().challenges().shareIn(scope, started = Eagerly, replay = 1)
+                project.service<ChallengeDownloadCachingService>().challenges()
+                    .catch {
+                        reportToIdeErrorDialog("Failed to load challenges", it)
+                        showErrorNotification(project, "Challenge Loading Error", "${it::class.qualifiedName}: ${it.message}")
+                    }
+                    .shareIn(scope, started = Eagerly, replay = 1)
             }.collectAsState(null)
 
-            if (challenges == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("Fetching challenges...")
-                }
-                return@addComposeTab
-            }
+            Column(modifier = Modifier.fillMaxSize()) {
+                BleStatusBar(bleState)
+
+                if (challenges == null) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("Fetching challenges...")
+                    }
+                } else {
 
             val challenge = challenges
                 ?.sortedBy { it.endTime }
@@ -197,6 +215,8 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                     }
                 }
             }
+            } // else challenges != null
+            } // Column
         }
     }
 
@@ -253,5 +273,24 @@ private fun countdownTo(instant: Instant, interval: Duration): Flow<Duration> = 
         }
         delay(((distance / interval) % 1.0) * interval)
         emit(distance)
+    }
+}
+
+@Composable
+private fun BleStatusBar(state: BleConnectionState) {
+    val color = when (state) {
+        BleConnectionState.CONNECTED -> Color(0xFF4CAF50)
+        BleConnectionState.SCANNING, BleConnectionState.CONNECTING -> Color(0xFFFFC107)
+        BleConnectionState.DISCONNECTED -> Color(0xFFF44336)
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
     }
 }

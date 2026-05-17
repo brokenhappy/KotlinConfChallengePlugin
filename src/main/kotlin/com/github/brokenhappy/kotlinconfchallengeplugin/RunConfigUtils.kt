@@ -1,5 +1,6 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin
 
+import com.intellij.execution.ExecutionManager
 import com.intellij.execution.ExecutorRegistry
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
@@ -15,21 +16,17 @@ internal enum class RunConfigType {
 }
 
 internal fun Project.runConfigurations(vararg types: RunConfigType) {
-    val jvmConfigurations = RunManager.getInstance(this).allSettings.filter { settings ->
-        settings.configuration.name in types.map { it.configName() }
-    }
-
-    if (jvmConfigurations.isEmpty()) {
+    val config = RunManager.getInstance(this).allSettings.firstOrNull { "hotRun" in it.name }
+    if (config == null) {
         showNotification(
             this,
             "No Run Configuration Found",
-            "No run configuration found in this Kotlin Multiplatform project.",
+            "No run configuration containing 'hotRun' found.",
             NotificationType.WARNING
         )
         return
     }
-
-    jvmConfigurations.forEach { executeRunConfiguration(this, it) }
+    executeRunConfiguration(this, config)
 }
 
 private fun RunConfigType.configName(): String = when (this) {
@@ -44,8 +41,14 @@ private fun executeRunConfiguration(project: Project, configSettings: RunnerAndC
             ?: ExecutorRegistry.getInstance().registeredExecutors.firstOrNull()
             ?: return
 
+        ExecutionManager.getInstance(project).getRunningDescriptors { it.name == configSettings.name }
+            .forEach { descriptor ->
+                descriptor.processHandler?.destroyProcess()
+            }
+
         val runner = ProgramRunner.getRunner(executor.id, configSettings.configuration) ?: return
         val environment = ExecutionEnvironment(executor, runner, configSettings, project)
+        environment.setHeadless()
 
         runner.execute(environment)
 

@@ -17,6 +17,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
+        <projectService serviceImplementation="com.github.brokenhappy.kotlinconfchallengeplugin.services.BleClientService"/>
         <projectConfigurable
                 parentId="tools"
                 instance="com.github.brokenhappy.kotlinconfchallengeplugin.SettingsConfigurable"
@@ -25,6 +26,7 @@
                 nonDefaultProject="true"/>
         <toolWindow factoryClass="com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow.KotlinConfChallengeToolWindowFactory" id="KotlinConf Challenge"/>
         <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.KotlinFileOnChangeSaver" />
+        <postStartupActivity implementation="com.github.brokenhappy.kotlinconfchallengeplugin.startup.BleAutoConnectStartup" />
         <notificationGroup id="KotlinConfChallengePlugin.Notifications" displayType="BALLOON" />
     </extensions>
 

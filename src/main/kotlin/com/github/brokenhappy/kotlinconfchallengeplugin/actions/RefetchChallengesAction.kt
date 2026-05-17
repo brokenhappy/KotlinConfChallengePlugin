@@ -1,10 +1,13 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin.actions
 
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
+import com.intellij.diagnostic.LogMessage
+import com.intellij.diagnostic.MessagePool
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -36,14 +39,23 @@ class RefetchChallengesAction : AnAction() {
 
 }
 
-internal fun showErrorNotification(project: Project, string: String) {
+internal fun showErrorNotification(project: Project, title: String, detail: String) {
     com.intellij.notification.Notifications.Bus.notify(
         com.intellij.notification.Notification(
             "KotlinConfChallengePlugin.Notifications",
-            "Challenge Download Failed",
-            string,
+            title,
+            detail,
             NotificationType.ERROR
         ),
         project
     )
+}
+
+internal fun showErrorNotification(project: Project, string: String) {
+    showErrorNotification(project, "KotlinConf Challenge Plugin", string)
+}
+
+internal fun reportToIdeErrorDialog(context: String, t: Throwable) {
+    logger<RefetchChallengesAction>().error(context, t)
+    MessagePool.getInstance().addIdeFatalMessage(LogMessage.createEvent(t, context))
 }

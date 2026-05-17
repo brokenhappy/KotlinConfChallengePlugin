@@ -32,8 +32,15 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-//    // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
-    compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation(project(":shared"))
+    compileOnly(libs.kotlinx.serialization.json)
+    implementation(libs.kable.core) {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+        exclude(group = "net.java.dev.jna", module = "jna")
+    }
 
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
