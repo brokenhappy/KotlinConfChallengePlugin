@@ -13,7 +13,10 @@ import com.github.brokenhappy.kotlinconfchallengeplugin.maincontrol.SheetMonitor
 import com.github.brokenhappy.kotlinconfchallengeplugin.maincontrol.ble.BlePeripheralBridge
 import com.github.brokenhappy.kotlinconfchallengeplugin.shared.protocol.Command
 import com.github.brokenhappy.kotlinconfchallengeplugin.shared.protocol.Team
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -142,6 +145,7 @@ fun MainControlApp(
     }
 }
 
+@OptIn(FlowPreview::class)
 @Composable
 private fun TopBar(
     state: MainControlState,
@@ -149,9 +153,27 @@ private fun TopBar(
     sheetMonitor: SheetMonitor,
 ) {
     val scope = rememberCoroutineScope()
-    var bleRunning by remember { mutableStateOf(false) }
-    var startError by remember { mutableStateOf<String?>(null) }
     val peripheralStatus by bleBridge.peripheralStatus.collectAsState()
+    var settingsExpanded by remember { mutableStateOf(false) }
+    var startError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { state.encryptionKeyBase64.value }
+            .debounce(300)
+            .collectLatest { key ->
+                bleBridge.stop()
+                sheetMonitor.stop()
+                startError = null
+                if (key.isNotBlank()) {
+                    val error = bleBridge.start(key)
+                    if (error != null) {
+                        startError = error
+                    } else {
+                        sheetMonitor.start()
+                    }
+                }
+            }
+    }
 
     Surface(
         elevation = 4.dp,
@@ -163,76 +185,63 @@ private fun TopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                OutlinedTextField(
-                    value = state.sheetId.value,
-                    onValueChange = {
-                        state.sheetId.value = it
-                        state.save()
-                    },
-                    label = { Text("Google Sheet ID") },
+                Text(
+                    text = "Peripheral: $peripheralStatus",
+                    color = if (startError != null) Color(0xFFF44336) else Color.Gray,
+                    fontSize = MaterialTheme.typography.caption.fontSize,
                     modifier = Modifier.weight(1f),
-                    singleLine = true,
                 )
-
-                OutlinedTextField(
-                    value = state.encryptionKeyBase64.value,
-                    onValueChange = {
-                        state.encryptionKeyBase64.value = it
-                        state.save()
-                    },
-                    label = { Text("Encryption Key (Base64)") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                )
-
-                Button(
-                    onClick = {
-                        if (bleRunning) {
-                            bleBridge.stop()
-                            sheetMonitor.stop()
-                            bleRunning = false
-                            startError = null
-                        } else {
-                            val error = bleBridge.start(state.encryptionKeyBase64.value)
-                            if (error != null) {
-                                startError = error
-                            } else {
-                                sheetMonitor.start()
-                                bleRunning = true
-                                startError = null
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = if (bleRunning) Color(0xFFF44336) else Color(0xFF4CAF50)
-                    ),
-                ) {
-                    Text(
-                        if (bleRunning) "Stop" else "Start",
-                        color = Color.White,
-                    )
-                }
 
                 Button(
                     onClick = { scope.launch { sheetMonitor.refreshNow() } },
-                    enabled = bleRunning,
+                    enabled = state.encryptionKeyBase64.value.isNotBlank(),
                 ) {
                     Text("Refresh Sheet")
                 }
+
+                Button(onClick = { settingsExpanded = !settingsExpanded }) {
+                    Text(if (settingsExpanded) "Hide Settings" else "Settings")
+                }
             }
 
-            Text(
-                text = "Peripheral: $peripheralStatus",
-                color = if (startError != null) Color(0xFFF44336) else Color.Gray,
-                fontSize = MaterialTheme.typography.caption.fontSize,
-            )
             if (startError != null) {
                 Text(
                     text = "Error: $startError",
                     color = Color(0xFFF44336),
                     fontSize = MaterialTheme.typography.caption.fontSize,
                 )
+            }
+
+            if (settingsExpanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedTextField(
+                        value = state.sheetId.value,
+                        onValueChange = {
+                            state.sheetId.value = it
+                            state.save()
+                        },
+                        label = { Text("Google Sheet ID") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+
+                    OutlinedTextField(
+                        value = state.encryptionKeyBase64.value,
+                        onValueChange = {
+                            state.encryptionKeyBase64.value = it
+                            state.save()
+                        },
+                        label = { Text("Encryption Key (Base64)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
             }
         }
     }
