@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/main-control" />
             <option value="$PROJECT_DIR$/shared" />
+            <option value="$PROJECT_DIR$/vote-server" />
           </set>
         </option>
       </GradleProjectSettings>
