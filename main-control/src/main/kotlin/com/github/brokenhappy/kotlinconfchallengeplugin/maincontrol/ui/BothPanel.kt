@@ -21,6 +21,10 @@ fun BothPanel(
     lastUpdateTime: Instant?,
     onRefreshBoth: () -> Unit,
     onRestartBoth: () -> Unit,
+    onStartVoting: () -> Unit,
+    onEndVoting: () -> Unit,
+    onResetVotes: () -> Unit,
+    votingStatus: String?,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -78,6 +82,53 @@ fun BothPanel(
                     fontSize = 14.sp,
                     color = Color.Gray,
                 )
+            }
+
+            Divider()
+
+            Text(
+                text = "Voting",
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+            )
+
+            if (votingStatus != null) {
+                Text(
+                    text = votingStatus,
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onStartVoting,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF4CAF50),
+                    ),
+                ) {
+                    Text("Start", color = Color.White)
+                }
+                Button(
+                    onClick = onEndVoting,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFFF44336),
+                    ),
+                ) {
+                    Text("End", color = Color.White)
+                }
+            }
+
+            Button(
+                onClick = onResetVotes,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFFFF9800),
+                ),
+            ) {
+                Text("Reset Votes", color = Color.White)
             }
 
             Spacer(modifier = Modifier.weight(1f))

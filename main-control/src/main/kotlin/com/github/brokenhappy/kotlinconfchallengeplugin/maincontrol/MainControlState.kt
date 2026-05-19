@@ -12,11 +12,15 @@ import kotlin.io.path.*
 data class PersistedConfig(
     val sheetId: String = "",
     val encryptionKeyBase64: String = "",
+    val voteServerUrl: String = "http://localhost:8080",
+    val voteAdminPassword: String = "secret password",
 )
 
 class MainControlState {
     val sheetId = mutableStateOf("")
     val encryptionKeyBase64 = mutableStateOf("")
+    val voteServerUrl = mutableStateOf("http://localhost:8080")
+    val voteAdminPassword = mutableStateOf("secret password")
 
     val redConnected = mutableStateOf(false)
     val blueConnected = mutableStateOf(false)
@@ -39,6 +43,8 @@ class MainControlState {
                 val config = json.decodeFromString<PersistedConfig>(configPath.readText())
                 sheetId.value = config.sheetId
                 encryptionKeyBase64.value = config.encryptionKeyBase64
+                voteServerUrl.value = config.voteServerUrl
+                voteAdminPassword.value = config.voteAdminPassword
             }
         } catch (_: Exception) {}
     }
@@ -49,6 +55,8 @@ class MainControlState {
             val config = PersistedConfig(
                 sheetId = sheetId.value,
                 encryptionKeyBase64 = encryptionKeyBase64.value,
+                voteServerUrl = voteServerUrl.value,
+                voteAdminPassword = voteAdminPassword.value,
             )
             configPath.writeText(json.encodeToString(config))
         } catch (_: Exception) {}

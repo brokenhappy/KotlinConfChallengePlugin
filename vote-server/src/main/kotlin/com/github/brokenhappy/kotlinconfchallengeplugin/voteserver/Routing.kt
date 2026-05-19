@@ -2,7 +2,6 @@ package com.github.brokenhappy.kotlinconfchallengeplugin.voteserver
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -13,10 +12,6 @@ import kotlinx.serialization.json.Json
 
 fun Application.configureRouting(state: VotingState) {
     routing {
-        get("/") {
-            call.respondHtml(HttpStatusCode.OK) { votingPage() }
-        }
-
         post("/vote/red") {
             if (!state.isSessionActive()) {
                 call.respond(HttpStatusCode.Forbidden, "Voting session is not active")

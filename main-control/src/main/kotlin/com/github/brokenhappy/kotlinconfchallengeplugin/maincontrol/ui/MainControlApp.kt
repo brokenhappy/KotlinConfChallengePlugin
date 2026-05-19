@@ -13,6 +13,10 @@ import com.github.brokenhappy.kotlinconfchallengeplugin.maincontrol.SheetMonitor
 import com.github.brokenhappy.kotlinconfchallengeplugin.maincontrol.ble.BlePeripheralBridge
 import com.github.brokenhappy.kotlinconfchallengeplugin.shared.protocol.Command
 import com.github.brokenhappy.kotlinconfchallengeplugin.shared.protocol.Team
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -36,6 +40,26 @@ fun MainControlApp(
     LaunchedEffect(blueConnected) { state.blueConnected.value = blueConnected }
 
     val bothEnabled = redConnected && blueConnected
+
+    var votingStatus by remember { mutableStateOf<String?>(null) }
+    val httpClient = remember { HttpClient(CIO) }
+
+    fun callVoteEndpoint(path: String) {
+        votingStatus = null
+        scope.launch {
+            try {
+                val url = state.voteServerUrl.value.trimEnd('/') + path
+                val password = state.voteAdminPassword.value
+                val response = httpClient.post(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"password":"${password.replace("\"", "\\\"")}"}""")
+                }
+                votingStatus = if (response.status.isSuccess()) "OK" else "Error: ${response.status}"
+            } catch (e: Exception) {
+                votingStatus = "Error: ${e.message}"
+            }
+        }
+    }
 
     var redClipboard by remember { mutableStateOf(ClipboardTransferProgress()) }
     var blueClipboard by remember { mutableStateOf(ClipboardTransferProgress()) }
@@ -182,6 +206,10 @@ fun MainControlApp(
                         lastUpdateTime = state.lastSheetUpdateTime.value,
                         onRefreshBoth = { scope.launch { bleBridge.sendCommandToBoth(Command.RefreshSheet) } },
                         onRestartBoth = { scope.launch { bleBridge.sendCommandToBoth(Command.RestartRunConfig) } },
+                        onStartVoting = { callVoteEndpoint("/hiddenUrl/startVotingSession") },
+                        onEndVoting = { callVoteEndpoint("/hiddenUrl/endVotingSessionButDontResetVoteCount") },
+                        onResetVotes = { callVoteEndpoint("/hiddenUrl/resetVoteCount") },
+                        votingStatus = votingStatus,
                         modifier = Modifier.weight(1f),
                     )
                     TeamPanel(
@@ -295,6 +323,34 @@ private fun TopBar(
                             state.save()
                         },
                         label = { Text("Encryption Key (Base64)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedTextField(
+                        value = state.voteServerUrl.value,
+                        onValueChange = {
+                            state.voteServerUrl.value = it
+                            state.save()
+                        },
+                        label = { Text("Vote Server URL") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                    )
+
+                    OutlinedTextField(
+                        value = state.voteAdminPassword.value,
+                        onValueChange = {
+                            state.voteAdminPassword.value = it
+                            state.save()
+                        },
+                        label = { Text("Vote Admin Password") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
