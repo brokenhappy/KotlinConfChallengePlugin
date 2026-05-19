@@ -353,10 +353,8 @@ class BleClientService(
             }
             is Command.SetClipboard -> {
                 try {
-                    java.awt.EventQueue.invokeAndWait {
-                        val selection = java.awt.datatransfer.StringSelection(command.content)
-                        java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
-                    }
+                    val selection = java.awt.datatransfer.StringSelection(command.content)
+                    java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
                 } catch (t: Throwable) {
                     val detail = "Failed to set clipboard: ${t::class.qualifiedName}: ${t.message}"
                     reportToIdeErrorDialog("Failed to set clipboard", t)
