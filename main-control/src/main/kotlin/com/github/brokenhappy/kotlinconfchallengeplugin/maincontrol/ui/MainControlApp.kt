@@ -45,7 +45,11 @@ fun MainControlApp(
     fun sendClipboardTo(team: Team) {
         val clipboard = Toolkit.getDefaultToolkit().systemClipboard
         val text = try {
-            clipboard.getData(DataFlavor.stringFlavor) as? String
+            if (clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor)) {
+                clipboard.getData(DataFlavor.stringFlavor) as? String
+            } else {
+                null
+            }
         } catch (_: Exception) { null }
         if (text.isNullOrEmpty()) return
 
@@ -82,8 +86,13 @@ fun MainControlApp(
                 setProgress(ClipboardTransferProgress(state = ClipboardTransferState.RECEIVING))
                 val text = bleBridge.awaitClipboardFrom(team)
                 if (text != null) {
-                    val selection = StringSelection(text)
-                    Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
+                    try {
+                        val selection = StringSelection(text)
+                        Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
+                    } catch (e: Exception) {
+                        setProgress(ClipboardTransferProgress(state = ClipboardTransferState.ERROR, resultText = "Failed to set clipboard: ${e.message}"))
+                        return@launch
+                    }
                     setProgress(ClipboardTransferProgress(state = ClipboardTransferState.DONE, resultText = text))
                 } else {
                     setProgress(ClipboardTransferProgress(state = ClipboardTransferState.ERROR, resultText = "Timeout waiting for response"))

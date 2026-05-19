@@ -347,8 +347,10 @@ class BleClientService(
             }
             is Command.SetClipboard -> {
                 try {
-                    val selection = java.awt.datatransfer.StringSelection(command.content)
-                    java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
+                    java.awt.EventQueue.invokeAndWait {
+                        val selection = java.awt.datatransfer.StringSelection(command.content)
+                        java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
+                    }
                 } catch (t: Throwable) {
                     val detail = "Failed to set clipboard: ${t::class.qualifiedName}: ${t.message}"
                     reportToIdeErrorDialog("Failed to set clipboard", t)
@@ -357,15 +359,16 @@ class BleClientService(
             }
             is Command.GetClipboard -> {
                 val text = try {
-                    java.awt.Toolkit.getDefaultToolkit().systemClipboard
-                        .getData(java.awt.datatransfer.DataFlavor.stringFlavor) as? String
+                    val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
+                    if (clipboard.isDataFlavorAvailable(java.awt.datatransfer.DataFlavor.stringFlavor)) {
+                        clipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as? String
+                    } else {
+                        null
+                    }
                 } catch (t: Throwable) {
-                    val detail = "Failed to read clipboard: ${t::class.qualifiedName}: ${t.message}"
-                    reportToIdeErrorDialog("Failed to read clipboard", t)
-                    _statusMessage.value = detail
                     null
                 }
-                if (text != null) sendStatus(StatusReport.ClipboardContent(text))
+                sendStatus(StatusReport.ClipboardContent(text ?: ""))
             }
         }
     }

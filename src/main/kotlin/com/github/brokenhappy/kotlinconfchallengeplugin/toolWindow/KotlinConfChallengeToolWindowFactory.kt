@@ -50,6 +50,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.flow.catch
@@ -197,7 +198,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                                     project.service<ChallengeStateService>().update {
                                         it.copy(endTimeOfChallengeThatHasOpenedChallenge = challenge.endTime)
                                     }
-                                    project.runConfigurations(RunConfigType.JVM)
+                                    scope.launch { project.runConfigurations(RunConfigType.JVM) }
                                 },
                             ) {
                                 if (hasRunApp) {
