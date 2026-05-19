@@ -2,6 +2,7 @@ package com.github.brokenhappy.kotlinconfchallengeplugin.toolWindow
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,7 +67,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.times
 
 
 class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
@@ -84,7 +84,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
             }.collectAsState(null)
 
             Column(modifier = Modifier.fillMaxSize()) {
-                BleStatusBar(bleState)
+                BleStatusBar(bleState, onReconnect = { project.service<BleClientService>().connectFromSettings() })
 
                 if (challenges == null) {
                     Box(
@@ -121,7 +121,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
 
                 if (appState.currentlyRunningChallengeEndTime != challenge.endTime) {
                     val startTime = challenge.endTime - challenge.duration
-                    val timeLeft by countdownTo(startTime, interval = 10.milliseconds).collectAsState(1.hours)
+                    val timeLeft by remember(startTime) { countdownTo(startTime, interval = 100.milliseconds) }.collectAsState(1.hours)
                     Box(
                         modifier = Modifier.fillMaxSize().padding(24.dp),
                         contentAlignment = Alignment.Center
@@ -148,7 +148,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                         }
                     }
                 } else {
-                    val timeLeft by countdownTo(challenge.endTime, interval = 10.milliseconds).collectAsState(1.hours)
+                    val timeLeft by remember(challenge.endTime) { countdownTo(challenge.endTime, interval = 100.milliseconds) }.collectAsState(1.hours)
                     LaunchedEffect(timeLeft, appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
                         if (timeLeft != Duration.ZERO) return@LaunchedEffect
 
@@ -253,9 +253,9 @@ private fun ChallengeImage(url: String, project: Project) {
             Text("Loading image...")
         }
     } else {
-        // Keep the image full-screen as required
+        val bitmap = remember(image) { Image.makeFromEncoded(image).toComposeImageBitmap() }
         Image(
-            bitmap = Image.makeFromEncoded(image).toComposeImageBitmap(),
+            bitmap = bitmap,
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit,
@@ -264,28 +264,26 @@ private fun ChallengeImage(url: String, project: Project) {
 }
 
 private fun countdownTo(instant: Instant, interval: Duration): Flow<Duration> = flow {
-    emit(instant - Clock.System.now())
     while (true) {
-        val now = Clock.System.now()
-        val distance = instant - now
+        val distance = instant - Clock.System.now()
         if (distance <= Duration.ZERO) {
             emit(Duration.ZERO)
-            break
         }
-        delay(((distance / interval) % 1.0) * interval)
         emit(distance)
+        delay(interval)
     }
 }
 
 @Composable
-private fun BleStatusBar(state: BleConnectionState) {
+private fun BleStatusBar(state: BleConnectionState, onReconnect: () -> Unit) {
     val color = when (state) {
         BleConnectionState.CONNECTED -> Color(0xFF4CAF50)
         BleConnectionState.SCANNING, BleConnectionState.CONNECTING -> Color(0xFFFFC107)
         BleConnectionState.DISCONNECTED -> Color(0xFFF44336)
     }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)
+            .clickable(onClick = onReconnect),
     ) {
         Box(
             modifier = Modifier

@@ -95,7 +95,7 @@ internal class ChallengeDownloadCachingService(
             if (needsRefresh) launch {
                 while (!hydrateFreshCaches(onError = { showErrorNotification(project, it) })) delay(10.seconds)
             }
-            state.collect { emit(it.challengesCache) }
+            state.map { it.challengesCache }.distinctUntilChanged().collect { emit(it) }
         }
     }
 

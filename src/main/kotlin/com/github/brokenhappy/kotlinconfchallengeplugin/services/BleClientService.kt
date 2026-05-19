@@ -80,9 +80,15 @@ class BleClientService(
             return
         }
 
-        disconnect()
+        val oldJob = connectJob
         _statusMessage.value = "Starting BLE as Team $team..."
         connectJob = scope.launch(Dispatchers.Default) {
+            oldJob?.cancelAndJoin()
+            val stalePeripheral = peripheral
+            peripheral = null
+            if (stalePeripheral != null) {
+                try { stalePeripheral.disconnect() } catch (_: Throwable) {}
+            }
             try {
                 connectLoop(team)
             } catch (e: CancellationException) {
