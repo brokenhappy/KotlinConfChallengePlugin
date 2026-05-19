@@ -206,9 +206,9 @@ fun MainControlApp(
                         lastUpdateTime = state.lastSheetUpdateTime.value,
                         onRefreshBoth = { scope.launch { bleBridge.sendCommandToBoth(Command.RefreshSheet) } },
                         onRestartBoth = { scope.launch { bleBridge.sendCommandToBoth(Command.RestartRunConfig) } },
-                        onStartVoting = { callVoteEndpoint("/hiddenUrl/startVotingSession") },
-                        onEndVoting = { callVoteEndpoint("/hiddenUrl/endVotingSessionButDontResetVoteCount") },
-                        onResetVotes = { callVoteEndpoint("/hiddenUrl/resetVoteCount") },
+                        onStartVoting = { callVoteEndpoint("/admin-panel-v9k3m/startVotingSession") },
+                        onEndVoting = { callVoteEndpoint("/admin-panel-v9k3m/endVotingSessionButDontResetVoteCount") },
+                        onResetVotes = { callVoteEndpoint("/admin-panel-v9k3m/resetVoteCount") },
                         votingStatus = votingStatus,
                         modifier = Modifier.weight(1f),
                     )

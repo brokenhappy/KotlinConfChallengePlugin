@@ -12,14 +12,14 @@ import kotlin.io.path.*
 data class PersistedConfig(
     val sheetId: String = "",
     val encryptionKeyBase64: String = "",
-    val voteServerUrl: String = "http://localhost:8080",
+    val voteServerUrl: String = "https://voting-app.labs.jb.gg",
     val voteAdminPassword: String = "secret password",
 )
 
 class MainControlState {
     val sheetId = mutableStateOf("")
     val encryptionKeyBase64 = mutableStateOf("")
-    val voteServerUrl = mutableStateOf("http://localhost:8080")
+    val voteServerUrl = mutableStateOf("https://voting-app.labs.jb.gg")
     val voteAdminPassword = mutableStateOf("secret password")
 
     val redConnected = mutableStateOf(false)

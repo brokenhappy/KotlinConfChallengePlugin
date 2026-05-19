@@ -30,7 +30,7 @@ fun Application.configureRouting(state: VotingState) {
             call.respond(HttpStatusCode.OK)
         }
 
-        post("/hiddenUrl/startVotingSession") {
+        post("/admin-panel-v9k3m/startVotingSession") {
             val body = call.receive<AdminRequest>()
             if (!state.checkPassword(body.password)) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid password")
@@ -40,7 +40,7 @@ fun Application.configureRouting(state: VotingState) {
             call.respond(HttpStatusCode.OK, "Voting session started")
         }
 
-        post("/hiddenUrl/endVotingSessionButDontResetVoteCount") {
+        post("/admin-panel-v9k3m/endVotingSessionButDontResetVoteCount") {
             val body = call.receive<AdminRequest>()
             if (!state.checkPassword(body.password)) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid password")
@@ -50,7 +50,7 @@ fun Application.configureRouting(state: VotingState) {
             call.respond(HttpStatusCode.OK, "Voting session ended")
         }
 
-        post("/hiddenUrl/resetVoteCount") {
+        post("/admin-panel-v9k3m/resetVoteCount") {
             val body = call.receive<AdminRequest>()
             if (!state.checkPassword(body.password)) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid password")
