@@ -361,6 +361,52 @@ class BleClientService(
                     _statusMessage.value = detail
                 }
             }
+            is Command.SetClipboardBinary -> {
+                try {
+                    val bytes = java.util.Base64.getDecoder().decode(command.contentBase64)
+                    when (command.type) {
+                        "image" -> {
+                            val image = javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes))
+                            if (image != null) {
+                                val transferable = object : java.awt.datatransfer.Transferable {
+                                    override fun getTransferDataFlavors() = arrayOf(java.awt.datatransfer.DataFlavor.imageFlavor)
+                                    override fun isDataFlavorSupported(flavor: java.awt.datatransfer.DataFlavor) =
+                                        flavor == java.awt.datatransfer.DataFlavor.imageFlavor
+                                    override fun getTransferData(flavor: java.awt.datatransfer.DataFlavor): Any {
+                                        if (flavor == java.awt.datatransfer.DataFlavor.imageFlavor) return image
+                                        throw java.awt.datatransfer.UnsupportedFlavorException(flavor)
+                                    }
+                                }
+                                java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(transferable, null)
+                            }
+                        }
+                        "file" -> {
+                            val tmpDir = java.nio.file.Files.createTempDirectory("ble-clipboard")
+                            val fileName = command.fileName ?: "clipboard-file"
+                            val tmpFile = tmpDir.resolve(fileName).toFile()
+                            tmpFile.writeBytes(bytes)
+                            val transferable = object : java.awt.datatransfer.Transferable {
+                                private val flavors = arrayOf(
+                                    java.awt.datatransfer.DataFlavor.javaFileListFlavor,
+                                    java.awt.datatransfer.DataFlavor.stringFlavor,
+                                )
+                                override fun getTransferDataFlavors() = flavors
+                                override fun isDataFlavorSupported(flavor: java.awt.datatransfer.DataFlavor) = flavor in flavors
+                                override fun getTransferData(flavor: java.awt.datatransfer.DataFlavor): Any = when (flavor) {
+                                    java.awt.datatransfer.DataFlavor.javaFileListFlavor -> listOf(tmpFile)
+                                    java.awt.datatransfer.DataFlavor.stringFlavor -> tmpFile.absolutePath
+                                    else -> throw java.awt.datatransfer.UnsupportedFlavorException(flavor)
+                                }
+                            }
+                            java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(transferable, null)
+                        }
+                    }
+                } catch (t: Throwable) {
+                    val detail = "Failed to set clipboard binary: ${t::class.qualifiedName}: ${t.message}"
+                    reportToIdeErrorDialog("Failed to set clipboard binary", t)
+                    _statusMessage.value = detail
+                }
+            }
             is Command.GetClipboard -> {
                 val text = try {
                     val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard

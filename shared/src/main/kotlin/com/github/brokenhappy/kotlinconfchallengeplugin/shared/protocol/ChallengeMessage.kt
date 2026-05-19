@@ -23,6 +23,13 @@ sealed interface Command {
     data class SetClipboard(val content: String) : Command
 
     @Serializable
+    data class SetClipboardBinary(
+        val contentBase64: String,
+        val type: String,
+        val fileName: String? = null,
+    ) : Command
+
+    @Serializable
     data object GetClipboard : Command
 }
 

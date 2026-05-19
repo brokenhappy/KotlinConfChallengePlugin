@@ -44,14 +44,63 @@ fun MainControlApp(
 
     fun sendClipboardTo(team: Team) {
         val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+
+        val command: Command
+        val resultDescription: String
+
         val text = try {
-            if (clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor)) {
+            if (clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor))
                 clipboard.getData(DataFlavor.stringFlavor) as? String
-            } else {
-                null
-            }
+            else null
         } catch (_: Exception) { null }
-        if (text.isNullOrEmpty()) return
+
+        if (!text.isNullOrEmpty()) {
+            command = Command.SetClipboard(text)
+            resultDescription = text
+        } else {
+            val imageBytes = try {
+                if (clipboard.isDataFlavorAvailable(DataFlavor.imageFlavor)) {
+                    val img = clipboard.getData(DataFlavor.imageFlavor) as? java.awt.Image
+                    img?.let {
+                        val buffered = if (it is java.awt.image.BufferedImage) it
+                        else java.awt.image.BufferedImage(
+                            it.getWidth(null), it.getHeight(null),
+                            java.awt.image.BufferedImage.TYPE_INT_ARGB,
+                        ).also { bImg -> bImg.createGraphics().apply { drawImage(img, 0, 0, null); dispose() } }
+                        val baos = java.io.ByteArrayOutputStream()
+                        javax.imageio.ImageIO.write(buffered, "png", baos)
+                        baos.toByteArray()
+                    }
+                } else null
+            } catch (_: Exception) { null }
+
+            if (imageBytes != null) {
+                command = Command.SetClipboardBinary(
+                    contentBase64 = java.util.Base64.getEncoder().encodeToString(imageBytes),
+                    type = "image",
+                )
+                resultDescription = "Image (${imageBytes.size / 1024} KB)"
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                val file = try {
+                    if (clipboard.isDataFlavorAvailable(DataFlavor.javaFileListFlavor))
+                        (clipboard.getData(DataFlavor.javaFileListFlavor) as? List<java.io.File>)?.firstOrNull()
+                    else null
+                } catch (_: Exception) { null }
+
+                if (file != null && file.exists()) {
+                    val bytes = file.readBytes()
+                    command = Command.SetClipboardBinary(
+                        contentBase64 = java.util.Base64.getEncoder().encodeToString(bytes),
+                        type = "file",
+                        fileName = file.name,
+                    )
+                    resultDescription = "File: ${file.name} (${bytes.size / 1024} KB)"
+                } else {
+                    return
+                }
+            }
+        }
 
         val setProgress = if (team == Team.RED) { p: ClipboardTransferProgress -> redClipboard = p } else { p: ClipboardTransferProgress -> blueClipboard = p }
         val setJob = if (team == Team.RED) { j: Job? -> redClipboardJob = j } else { j: Job? -> blueClipboardJob = j }
@@ -59,10 +108,10 @@ fun MainControlApp(
         setProgress(ClipboardTransferProgress(state = ClipboardTransferState.SENDING))
         val job = scope.launch {
             try {
-                bleBridge.sendCommandWithProgress(team, Command.SetClipboard(text)) { sent, total ->
+                bleBridge.sendCommandWithProgress(team, command) { sent, total ->
                     setProgress(ClipboardTransferProgress(state = ClipboardTransferState.SENDING, sent = sent, total = total))
                 }
-                setProgress(ClipboardTransferProgress(state = ClipboardTransferState.DONE, resultText = text))
+                setProgress(ClipboardTransferProgress(state = ClipboardTransferState.DONE, resultText = resultDescription))
             } catch (_: kotlinx.coroutines.CancellationException) {
                 setProgress(ClipboardTransferProgress())
                 throw kotlinx.coroutines.CancellationException()

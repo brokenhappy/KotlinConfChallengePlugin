@@ -91,6 +91,7 @@ class BlePeripheralBridge(
         val l = lib ?: return
         val encrypted = enc.encrypt(command.encode())
         val chunks = encodeChunked(encrypted)
+        onProgress(0, chunks.size)
         for ((i, chunk) in chunks.withIndex()) {
             currentCoroutineContext().ensureActive()
             when (team) {
@@ -98,6 +99,7 @@ class BlePeripheralBridge(
                 Team.BLUE -> l.control_ble_send_blue(chunk, chunk.size)
             }
             onProgress(i + 1, chunks.size)
+            yield()
         }
     }
 
