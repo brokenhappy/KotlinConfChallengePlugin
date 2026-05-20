@@ -268,6 +268,7 @@ private fun countdownTo(instant: Instant, interval: Duration): Flow<Duration> = 
         val distance = instant - Clock.System.now()
         if (distance <= Duration.ZERO) {
             emit(Duration.ZERO)
+            return@flow
         }
         emit(distance)
         delay(interval)
