@@ -270,6 +270,9 @@ class BleClientService(
                     }
                 } catch (_: CancellationException) {
                     currentCoroutineContext().ensureActive()
+                } catch (t: Throwable) {
+                    if (!t.isBleDisconnection()) throw t
+                    log.info("BLE: connection lost (${t.message})")
                 }
                 log.info("BLE: peripheral disconnected, will reconnect")
                 _statusMessage.value = "Disconnected from '$deviceName'. Reconnecting..."
@@ -331,7 +334,9 @@ class BleClientService(
         launch {
             while (isActive) {
                 delay(BleConfig.HEARTBEAT_INTERVAL)
-                p.write(statusChar, byteArrayOf(HEARTBEAT_BYTE), WriteType.WithResponse)
+                writeMutex.withLock {
+                    p.write(statusChar, byteArrayOf(HEARTBEAT_BYTE), WriteType.WithResponse)
+                }
             }
         }
     }
@@ -436,6 +441,12 @@ class BleClientService(
         val checksum = computeCsvChecksum(csv)
         sendStatus(StatusReport.SheetState(checksum, Clock.System.now().toEpochMilliseconds()))
     }
+
+    private fun Throwable.isBleDisconnection(): Boolean =
+        generateSequence(this) { it.cause }.any { ex ->
+            val msg = ex.message.orEmpty()
+            "Channel closed" in msg || "NotConnected" in msg
+        }
 
     private suspend fun sendStatus(report: StatusReport) {
         val p = peripheral ?: return
