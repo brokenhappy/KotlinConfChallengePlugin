@@ -1,8 +1,7 @@
 package com.github.brokenhappy.kotlinconfchallengeplugin.services
 
-import com.github.brokenhappy.kotlinconfchallengeplugin.RunConfigType
 import com.github.brokenhappy.kotlinconfchallengeplugin.actions.reportToIdeErrorDialog
-import com.github.brokenhappy.kotlinconfchallengeplugin.runConfigurations
+import com.github.brokenhappy.kotlinconfchallengeplugin.runJvm
 import com.github.brokenhappy.kotlinconfchallengeplugin.shared.computeCsvChecksum
 import com.github.brokenhappy.kotlinconfchallengeplugin.shared.protocol.*
 import com.intellij.openapi.components.Service
@@ -348,7 +347,7 @@ class BleClientService(
                 reportSheetState()
             }
             is Command.RestartRunConfig -> {
-                project.runConfigurations(RunConfigType.JVM)
+                project.runJvm()
             }
             is Command.Ping -> {
                 sendStatus(StatusReport.Pong(

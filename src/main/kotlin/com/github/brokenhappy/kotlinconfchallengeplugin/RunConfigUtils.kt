@@ -12,14 +12,8 @@ import com.intellij.platform.ide.progress.withBackgroundProgress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-internal enum class RunConfigType {
-    JVM,
-    ANDROID,
-    JS,
-}
-
-internal suspend fun Project.runConfigurations(vararg types: RunConfigType) {
-    val config = RunManager.getInstance(this).allSettings.firstOrNull { "hotRun" in it.name }
+internal suspend fun Project.runJvm() {
+    val config = RunManager.getInstance(this).allSettings.firstOrNull { it.name == "main [jvm]" }
         ?: return
     executeRunConfiguration(this, config)
 }

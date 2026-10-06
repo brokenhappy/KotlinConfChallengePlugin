@@ -117,7 +117,7 @@ private fun ChallengeSettingsView(
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Automatically start the JVM and Android run configs after challenge completion:")
+            Text("Automatically start the JVM a-n-d A-n-d-r-o-i-d run configs after challenge completion (CURRENTLY ONLY RUNS JVM):")
             Checkbox(
                 checked = current.enableAutoStartJvmAndAndroidAfterChallengeCompletion,
                 onCheckedChange = { update(current.copy(enableAutoStartJvmAndAndroidAfterChallengeCompletion = it)) },

@@ -33,8 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.github.brokenhappy.kotlinconfchallengeplugin.actions.reportToIdeErrorDialog
 import com.github.brokenhappy.kotlinconfchallengeplugin.actions.showErrorNotification
-import com.github.brokenhappy.kotlinconfchallengeplugin.RunConfigType
-import com.github.brokenhappy.kotlinconfchallengeplugin.runConfigurations
+import com.github.brokenhappy.kotlinconfchallengeplugin.runJvm
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.BleClientService
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.BleConnectionState
 import com.github.brokenhappy.kotlinconfchallengeplugin.services.ChallengeDownloadCachingService
@@ -153,7 +152,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                         if (timeLeft != Duration.ZERO) return@LaunchedEffect
 
                         if (appState.settings.enableAutoStartJvmAndAndroidAfterChallengeCompletion) {
-                            project.runConfigurations(RunConfigType.JVM, RunConfigType.ANDROID)
+                            project.runJvm() // No more Android ATM
                         }
                         if (appState.settings.enableAutoPatchAndUndoChangesAfterChallengeCompletion) {
                             withContext(Dispatchers.Default) {
@@ -198,7 +197,7 @@ class KotlinConfChallengeToolWindowFactory : ToolWindowFactory, DumbAware {
                                     project.service<ChallengeStateService>().update {
                                         it.copy(endTimeOfChallengeThatHasOpenedChallenge = challenge.endTime)
                                     }
-                                    scope.launch { project.runConfigurations(RunConfigType.JVM) }
+                                    scope.launch { project.runJvm() }
                                 },
                             ) {
                                 if (hasRunApp) {
